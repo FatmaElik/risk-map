@@ -3,603 +3,520 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>İstanbul & Ankara Risk Analiz Dashboard</title>
+  <title>Mahalle Risk Analiz Dashboard</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;background:#f8fafc;color:#1e293b;overflow:hidden}
-    .app-container{display:flex;flex-direction:column;height:100vh}
-    .header{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;padding:1rem 2rem;box-shadow:0 4px 12px rgba(0,0,0,.15);z-index:1000}
-    .header-content{display:flex;align-items:center;justify-content:space-between}
-    .logo{display:flex;align-items:center;gap:1rem}
-    .logo i{font-size:1.8rem}
-    .logo h1{font-size:1.5rem;font-weight:700}
-    .logo .subtitle{font-size:.875rem;opacity:.9;margin-top:.25rem}
-    .header-stats{display:flex;gap:2rem;font-size:.875rem}
-    .header-stat{text-align:center}
-    .header-stat-value{font-size:1.5rem;font-weight:700}
-    .main-content{display:flex;flex:1;overflow:hidden}
-    .control-panel{width:360px;background:#fff;border-right:1px solid #e2e8f0;padding:1.5rem;overflow-y:auto}
-    .panel-section{margin-bottom:2rem;padding-bottom:1.5rem;border-bottom:1px solid #e2e8f0}
-    .panel-section:last-child{border-bottom:none}
-    .panel-section h3{font-size:1rem;font-weight:600;color:#1e293b;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem}
-    .control-group{margin-bottom:1.25rem}
-    .control-group label{display:block;font-size:.875rem;font-weight:500;color:#374151;margin-bottom:.5rem}
-    .select-input,.text-input{width:100%;padding:.75rem;border:2px solid #e2e8f0;border-radius:.5rem;background:#fff;font-size:.875rem;cursor:pointer;transition:all .2s}
-    .select-input:focus,.text-input:focus{outline:none;border-color:#667eea;box-shadow:0 0 0 3px rgba(102,126,234,.1)}
-    .city-selector{display:flex;gap:.5rem;margin-bottom:1rem}
-    .city-btn{flex:1;padding:.75rem;border:2px solid #e2e8f0;background:#fff;border-radius:.5rem;cursor:pointer;font-weight:600;transition:all .2s;font-size:.875rem}
-    .city-btn.active{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;border-color:#667eea}
-    .city-btn:hover{transform:translateY(-2px);box-shadow:0 4px 8px rgba(0,0,0,.1)}
-    .view-selector{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem;margin-bottom:1rem}
-    .view-btn{padding:.75rem .5rem;border:2px solid #e2e8f0;background:#fff;border-radius:.5rem;cursor:pointer;font-weight:600;transition:all .2s;font-size:.75rem;text-align:center}
-    .view-btn.active{background:#667eea;color:#fff;border-color:#667eea}
-    .stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem}
-    .stat-card{text-align:center;padding:1rem;background:linear-gradient(135deg,#f8fafc 0%,#e2e8f0 100%);border-radius:.75rem;border:1px solid #e2e8f0}
-    .stat-value{font-size:1.5rem;font-weight:700;color:#667eea}
-    .stat-label{font-size:.7rem;color:#64748b;margin-top:.25rem}
-    .legend{display:flex;flex-direction:column;gap:.5rem}
-    .legend-item{display:flex;align-items:center;gap:.75rem;padding:.5rem;border-radius:.5rem;cursor:pointer;transition:background .2s}
-    .legend-item:hover{background:#f8fafc}
-    .legend-color{width:32px;height:22px;border-radius:4px;border:2px solid #555}
-    .legend-label{flex:1;font-size:.875rem;font-weight:500}
-    .legend-count{font-size:.75rem;color:#7f8c8d;background:#e2e8f0;padding:.25rem .5rem;border-radius:.75rem}
-    .ml-toggle{background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);color:#fff;padding:1rem;border-radius:.75rem;cursor:pointer;text-align:center;font-weight:600;transition:all .2s}
-    .ml-toggle:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(102,126,234,.4)}
-    .ml-toggle input{margin-right:.5rem;width:18px;height:18px;cursor:pointer}
-    .viz-container{flex:1;display:flex;flex-direction:column;overflow:hidden}
-    .tab-nav{display:flex;background:#fff;border-bottom:2px solid #e2e8f0;padding:0 1.5rem;gap:.5rem}
-    .tab-btn{padding:1rem 1.5rem;background:none;border:none;border-bottom:3px solid transparent;color:#64748b;cursor:pointer;font-weight:600;transition:all .2s;display:flex;align-items:center;gap:.5rem;font-size:.875rem}
-    .tab-btn.active{color:#667eea;border-bottom-color:#667eea}
-    .tab-btn:hover{color:#667eea;background:#f8fafc}
-    .tab-content{display:none;flex:1;overflow:hidden}
-    .tab-content.active{display:flex;flex-direction:column}
-    .map-container{flex:1;position:relative}
+    .app{display:flex;flex-direction:column;height:100vh}
+    .header{background:linear-gradient(135deg,#667eea 0%, #764ba2 100%);color:#fff;padding:14px 22px;box-shadow:0 4px 16px rgba(0,0,0,.15)}
+    .header h1{font-size:20px;font-weight:700}
+    .header small{opacity:.9}
+    .content{display:flex;flex:1;overflow:hidden}
+    .panel{width:360px;background:#fff;border-right:1px solid #e5e7eb;overflow:auto;padding:18px}
+    .sec{margin-bottom:18px;padding-bottom:14px;border-bottom:1px solid #e5e7eb}
+    .sec h3{font-size:14px;margin-bottom:10px;display:flex;gap:8px;align-items:center}
+    .btnrow{display:flex;gap:8px}
+    .btn{flex:1;padding:10px;border:2px solid #e5e7eb;border-radius:10px;background:#fff;cursor:pointer;font-weight:600}
+    .btn.active{background:#667eea;border-color:#667eea;color:#fff}
+    .select,.input{width:100%;padding:10px;border:2px solid #e5e7eb;border-radius:10px}
+    .legend{display:flex;flex-direction:column;gap:6px}
+    .legend-item{display:flex;align-items:center;gap:10px}
+    .legend-swatch{width:28px;height:18px;border:2px solid #555;border-radius:4px}
+    .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+    .card{padding:12px;text-align:center;border:1px solid #e5e7eb;border-radius:10px;background:#f9fafb}
+    .card .v{font-weight:700;color:#667eea;font-size:18px}
+    .tabs{display:flex;background:#fff;border-bottom:2px solid #e5e7eb;padding:0 18px}
+    .tab{padding:14px 18px;border:none;background:none;cursor:pointer;font-weight:700;color:#6b7280;border-bottom:3px solid transparent}
+    .tab.active{color:#667eea;border-bottom-color:#667eea}
+    .view{display:none;flex:1}
+    .view.active{display:flex;flex-direction:column}
     #map{width:100%;height:100%}
-    .chart-container{flex:1;padding:2rem;overflow:auto;background:#fff}
-    .chart-controls{background:#fff;padding:1.5rem 2rem;border-bottom:2px solid #e2e8f0}
-    .control-row{display:flex;gap:1.5rem;align-items:end}
-    .control-item{flex:1}
-    .loading{position:fixed;inset:0;background:rgba(255,255,255,.95);display:flex;align-items:center;justify-content:center;z-index:9999}
-    .loading-content{text-align:center;padding:2rem 3rem;background:#fff;border-radius:1rem;box-shadow:0 20px 60px rgba(0,0,0,.3)}
-    .spinner{border:5px solid #f3f3f3;border-top:5px solid #667eea;border-radius:50%;width:60px;height:60px;animation:spin 1s linear infinite;margin:0 auto 1.5rem}
-    @keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
-    .error-box{background:#fee;color:#c00;padding:1.5rem;border-radius:.75rem;margin:1rem;border:2px solid #c00}
-    .success-box{background:#efe;color:#060;padding:1rem;border-radius:.5rem;margin:.5rem 0;border:2px solid #060;font-size:.875rem}
-    .mahalle-info{background:#f8fafc;padding:1rem;border-radius:.5rem;margin:1rem 0;font-size:.875rem;border-left:4px solid #667eea}
-    .variable-info{background:#f8fafc;padding:1rem;border-radius:.5rem;border-left:4px solid #667eea;font-size:.875rem;color:#64748b;margin-top:.5rem}
-    canvas{max-height:600px !important}
-    .color-scheme-selector{display:flex;gap:.5rem;margin-top:.5rem}
-    .scheme-btn{flex:1;padding:.5rem;border:2px solid #e2e8f0;background:#fff;border-radius:.5rem;cursor:pointer;font-size:.75rem;font-weight:500;transition:all .2s}
-    .scheme-btn.active{background:#667eea;color:#fff;border-color:#667eea}
+    .controls{padding:14px 18px;border-bottom:2px solid #e5e7eb;background:#fff}
+    .ctrlrow{display:flex;gap:14px;align-items:end}
+    .ctrl{flex:1}
+    .chartwrap{flex:1;overflow:auto;background:#fff;padding:18px}
+    .loading{position:fixed;inset:0;background:rgba(255,255,255,.96);display:flex;align-items:center;justify-content:center;z-index:9999}
+    .box{background:#fff;padding:22px;border-radius:12px;box-shadow:0 18px 60px rgba(0,0,0,.25);text-align:center}
+    .spinner{width:58px;height:58px;border:5px solid #e5e7eb;border-top:5px solid #667eea;border-radius:50%;margin:0 auto 12px;animation:spin 1s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .note{font-size:12px;color:#64748b;margin-top:6px}
   </style>
 </head>
 <body>
-  <div id="loading" class="loading">
-    <div class="loading-content">
-      <div class="spinner"></div>
-      <div style="font-size:1.25rem;font-weight:600;color:#1e293b;margin-bottom:.5rem;">Veriler Yükleniyor</div>
-      <div id="loadingStatus" style="font-size:.875rem;color:#64748b;"></div>
-    </div>
+<div id="loading" class="loading">
+  <div class="box"><div class="spinner"></div><div id="loadtxt">Yükleniyor…</div></div>
+</div>
+
+<div class="app">
+  <div class="header">
+    <h1>Mahalle Risk Analiz Dashboard</h1>
+    <small>İstanbul & Ankara – Choropleth, VS30, Scatter, Korelasyon</small>
   </div>
 
-  <div class="app-container">
-    <header class="header">
-      <div class="header-content">
-        <div class="logo">
-          <i class="fas fa-chart-line"></i>
-          <div>
-            <h1>Mahalle Risk Analiz Dashboard</h1>
-            <div class="subtitle">İstanbul & Ankara - Kapsamlı Risk Değerlendirme Sistemi</div>
-          </div>
-        </div>
-        <div class="header-stats">
-          <div class="header-stat"><div class="header-stat-value" id="headerTotal">0</div><div>Toplam Mahalle</div></div>
-          <div class="header-stat"><div class="header-stat-value" id="headerAvg">0</div><div>Ort. Risk</div></div>
-          <div class="header-stat"><div class="header-stat-value" id="headerHigh">0</div><div>Yüksek Risk</div></div>
+  <div class="content">
+    <!-- LEFT PANEL -->
+    <aside class="panel">
+      <div class="sec">
+        <h3><i class="fa-solid fa-city"></i> Şehir Seçimi</h3>
+        <div class="btnrow">
+          <button id="btnCityIST" class="btn active" onclick="selectCity('istanbul')">İSTANBUL</button>
+          <button id="btnCityANK" class="btn" onclick="selectCity('ankara')">ANKARA</button>
         </div>
       </div>
-    </header>
 
-    <main class="main-content">
-      <aside class="control-panel">
-        <div id="errorContainer"></div>
-
-        <div class="panel-section">
-          <h3><i class="fas fa-map-marked-alt"></i> Şehir Seçimi</h3>
-          <div class="city-selector">
-            <button class="city-btn active" id="cityIstanbul" onclick="selectCity('istanbul')"><i class="fas fa-city"></i> İSTANBUL</button>
-            <button class="city-btn" id="cityAnkara" onclick="selectCity('ankara')"><i class="fas fa-landmark"></i> ANKARA</button>
-          </div>
-        </div>
-
-        <div class="panel-section">
-          <h3><i class="fas fa-eye"></i> Görünüm</h3>
-          <div class="view-selector">
-            <button class="view-btn active" id="btnAll" onclick="switchView('all')">TÜM</button>
-            <button class="view-btn" id="btnIstanbul" onclick="switchView('istanbul')">İST</button>
-            <button class="view-btn" id="btnAnkara" onclick="switchView('ankara')">ANK</button>
-          </div>
-        </div>
-
-        <div class="panel-section">
-          <h3><i class="fas fa-search"></i> <span id="selectedCityLabel">İstanbul</span> Mahallesi</h3>
-          <div class="control-group">
-            <select id="mahalleSelect" class="select-input" onchange="selectMahalle()">
-              <option value="">-- Mahalle Seçiniz --</option>
-            </select>
-          </div>
-          <div id="mahalleInfo" class="mahalle-info" style="display:none;">
-            <div id="mahalleDetails"></div>
-          </div>
-        </div>
-
-        <div class="panel-section">
-          <h3><i class="fas fa-brain"></i> Model Seçimi</h3>
-          <div class="ml-toggle" onclick="toggleMLMode()">
-            <label style="display:flex;align-items:center;gap:.5rem;justify-content:center;cursor:pointer;">
-              <input type="checkbox" id="mlToggle" checked>
-              <span id="mlLabel">✓ ML Tahminleri Kullan</span>
-            </label>
-          </div>
-        </div>
-
-        <div class="panel-section">
-          <h3><i class="fas fa-chart-bar"></i> Değişken Seçimi</h3>
-          <div class="control-group">
-            <label>Görselleştirme Değişkeni</label>
-            <select id="choroplethVariable" class="select-input" onchange="updateChoropleth()">
-              <option value="risk_class_5">Risk Sınıfı (5'li)</option>
-              <option value="risk_score">Risk Skoru</option>
-              <option value="ml_risk_score">ML Risk Skoru</option>
-              <option value="vs30_mean">VS30 Ortalama</option>
-              <option value="pga_scenario_mw75">PGA Senaryo Mw7.5</option>
-              <option value="toplam_nufus">Toplam Nüfus</option>
-              <option value="toplam_bina">Toplam Bina</option>
-            </select>
-          </div>
-          <div class="control-group">
-            <label>Renk Şeması</label>
-            <div class="color-scheme-selector">
-              <button class="scheme-btn active" data-scheme="risk" onclick="setColorScheme('risk')">Risk</button>
-              <button class="scheme-btn" data-scheme="sequential" onclick="setColorScheme('sequential')">Ardışık</button>
-              <button class="scheme-btn" data-scheme="diverging" onclick="setColorScheme('diverging')">Ayrışan</button>
-            </div>
-          </div>
-          <div id="variableInfo" class="variable-info"></div>
-        </div>
-
-        <div class="panel-section">
-          <h3><i class="fas fa-palette"></i> Risk Renkleri</h3>
-          <div id="legendItems" class="legend"></div>
-        </div>
-
-        <div class="panel-section">
-          <h3><i class="fas fa-calculator"></i> İstatistikler</h3>
-          <div class="stats-grid">
-            <div class="stat-card"><div class="stat-value" id="totalCount">0</div><div class="stat-label">Mahalle</div></div>
-            <div class="stat-card"><div class="stat-value" id="avgRisk">0</div><div class="stat-label">Ort. Risk</div></div>
-            <div class="stat-card"><div class="stat-value" id="highRisk">0</div><div class="stat-label">Yüksek Risk</div></div>
-          </div>
-        </div>
-      </aside>
-
-      <div class="viz-container">
-        <div class="tab-nav">
-          <button class="tab-btn active" data-tab="map" onclick="switchTab('map')"><i class="fas fa-map"></i>Choropleth Harita</button>
-          <button class="tab-btn" data-tab="scatter" onclick="switchTab('scatter')"><i class="fas fa-chart-scatter"></i>Scatter Analizi</button>
-          <button class="tab-btn" data-tab="correlation" onclick="switchTab('correlation')"><i class="fas fa-project-diagram"></i>Korelasyon</button>
-          <button class="tab-btn" data-tab="distribution" onclick="switchTab('distribution')"><i class="fas fa-chart-bar"></i>Dağılım</button>
-        </div>
-
-        <div class="tab-content active" id="map-tab">
-          <div class="map-container"><div id="map"></div></div>
-        </div>
-
-        <div class="tab-content" id="scatter-tab">
-          <div class="chart-controls">
-            <div class="control-row">
-              <div class="control-item">
-                <label>X Ekseni</label>
-                <select id="scatterX" class="select-input" onchange="updateScatter()">
-                  <option value="toplam_nufus">Toplam Nüfus</option>
-                  <option value="toplam_bina">Toplam Bina</option>
-                  <option value="vs30_mean">VS30 Ortalama</option>
-                  <option value="pga_scenario_mw75">PGA Senaryo</option>
-                </select>
-              </div>
-              <div class="control-item">
-                <label>Y Ekseni</label>
-                <select id="scatterY" class="select-input" onchange="updateScatter()">
-                  <option value="risk_score">Risk Skoru</option>
-                  <option value="ml_risk_score">ML Risk Skoru</option>
-                  <option value="insan_etkisi">İnsan Etkisi</option>
-                  <option value="bina_etkisi">Bina Etkisi</option>
-                  <option value="zemin_etkisi">Zemin Etkisi</option>
-                </select>
-              </div>
-              <div class="control-item">
-                <label>Renklendirme</label>
-                <select id="scatterColor" class="select-input" onchange="updateScatter()">
-                  <option value="risk_class_5">Risk Sınıfı</option>
-                  <option value="ml_predicted_class">ML Tahmin Sınıfı</option>
-                  <option value="ilce_adi">İlçe</option>
-                </select>
-              </div>
-            </div>
-          </div>
-          <div class="chart-container">
-            <canvas id="scatterChart"></canvas>
-          </div>
-        </div>
-
-        <div class="tab-content" id="correlation-tab">
-          <div class="chart-controls">
-            <div class="control-row">
-              <div class="control-item">
-                <label>Korelasyon Değişkenleri</label>
-                <div style="font-size:.75rem;color:#64748b;margin-top:.5rem;">Risk faktörleri arası ilişkileri gösterir</div>
-              </div>
-            </div>
-          </div>
-          <div class="chart-container"><canvas id="correlationChart"></canvas></div>
-        </div>
-
-        <div class="tab-content" id="distribution-tab">
-          <div class="chart-controls">
-            <div class="control-row">
-              <div class="control-item">
-                <label>Dağılım Değişkeni</label>
-                <select id="distVariable" class="select-input" onchange="updateDistribution()">
-                  <option value="risk_class_5">Risk Sınıfı Dağılımı</option>
-                  <option value="ilce_adi">İlçe Dağılımı</option>
-                  <option value="vs30_mean">VS30 Dağılımı</option>
-                  <option value="toplam_nufus">Nüfus Dağılımı</option>
-                </select>
-              </div>
-            </div>
-          </div>
-          <div class="chart-container"><canvas id="distributionChart"></canvas></div>
+      <div class="sec">
+        <h3><i class="fa-solid fa-eye"></i> Görünüm</h3>
+        <div class="btnrow">
+          <button id="viewAll" class="btn active" onclick="switchView('all')">TÜM</button>
+          <button id="viewIst" class="btn" onclick="switchView('istanbul')">İST</button>
+          <button id="viewAnk" class="btn" onclick="switchView('ankara')">ANK</button>
         </div>
       </div>
-    </main>
+
+      <div class="sec">
+        <h3><i class="fa-solid fa-magnifying-glass"></i> <span id="cityLabel">İstanbul</span> Mahallesi</h3>
+        <select id="mahSelect" class="select" onchange="selectMahalle()">
+          <option value="">-- Mahalle Seçiniz --</option>
+        </select>
+        <div class="note" id="mahInfo" style="display:none;margin-top:8px"></div>
+      </div>
+
+      <div class="sec">
+        <h3><i class="fa-solid fa-gears"></i> Görselleştirme Değişkeni</h3>
+        <select id="choroVar" class="select" onchange="updateChoropleth()">
+          <option value="risk_class_5">Risk Sınıfı (1–5)</option>
+          <option value="risk_score">Risk Skoru</option>
+          <option value="vs30_mean">VS30 Ortalama</option>
+          <option value="pga_scenario_mw75">PGA (Mw7.5)</option>
+          <option value="toplam_nufus">Toplam Nüfus</option>
+          <option value="toplam_bina">Toplam Bina</option>
+        </select>
+        <div class="note" id="varNote">Seçili: Risk Sınıfı</div>
+      </div>
+
+      <div class="sec">
+        <h3><i class="fa-solid fa-palette"></i> Legend</h3>
+        <div id="legend" class="legend"></div>
+      </div>
+
+      <div class="sec">
+        <h3><i class="fa-solid fa-chart-simple"></i> İstatistikler</h3>
+        <div class="cards">
+          <div class="card"><div class="v" id="statTotal">0</div><div>Toplam Mahalle</div></div>
+          <div class="card"><div class="v" id="statAvg">0</div><div>Ort. Risk</div></div>
+          <div class="card"><div class="v" id="statHigh">0</div><div>Yüksek Risk</div></div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- RIGHT: MAP + CHARTS -->
+    <section style="flex:1;display:flex;flex-direction:column;">
+      <div class="tabs">
+        <button class="tab active" id="tab-map" onclick="switchTab('map')">Choropleth Harita</button>
+        <button class="tab" id="tab-scatter" onclick="switchTab('scatter')">Scatter Analizi</button>
+        <button class="tab" id="tab-corr" onclick="switchTab('corr')">Korelasyon</button>
+        <button class="tab" id="tab-dist" onclick="switchTab('dist')">Dağılım</button>
+      </div>
+
+      <!-- MAP -->
+      <div class="view active" id="view-map">
+        <div id="map"></div>
+      </div>
+
+      <!-- SCATTER -->
+      <div class="view" id="view-scatter">
+        <div class="controls">
+          <div class="ctrlrow">
+            <div class="ctrl">
+              <label>X Ekseni</label>
+              <select id="sx" class="select" onchange="updateScatter()">
+                <option value="vs30_mean">VS30</option>
+                <option value="toplam_nufus">Nüfus</option>
+                <option value="toplam_bina">Bina</option>
+                <option value="pga_scenario_mw75">PGA</option>
+              </select>
+            </div>
+            <div class="ctrl">
+              <label>Y Ekseni</label>
+              <select id="sy" class="select" onchange="updateScatter()">
+                <option value="risk_score">Risk Skoru</option>
+                <option value="combined_risk_index">Combined Risk</option>
+              </select>
+            </div>
+            <div class="ctrl">
+              <label>Renk</label>
+              <select id="sc" class="select" onchange="updateScatter()">
+                <option value="risk_class_5">Risk Sınıfı</option>
+                <option value="ilce_adi">İlçe</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="chartwrap"><canvas id="scatter"></canvas></div>
+      </div>
+
+      <!-- CORR -->
+      <div class="view" id="view-corr">
+        <div class="chartwrap"><canvas id="corr"></canvas></div>
+      </div>
+
+      <!-- DIST -->
+      <div class="view" id="view-dist">
+        <div class="controls">
+          <div class="ctrlrow">
+            <div class="ctrl">
+              <label>Değişken</label>
+              <select id="dv" class="select" onchange="updateDist()">
+                <option value="risk_class_5">Risk Sınıfı</option>
+                <option value="ilce_adi">İlçe</option>
+                <option value="vs30_mean">VS30</option>
+                <option value="toplam_nufus">Nüfus</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="chartwrap"><canvas id="dist"></canvas></div>
+      </div>
+    </section>
   </div>
+</div>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script>
-    // ------- Global State -------
-    let map, currentView='all', selectedCity='istanbul';
-    let cityMahalleler={istanbul:[], ankara:[]};
-    let cityLayers={istanbul:null, ankara:null};
-    let cityData={
-      istanbul:{geojson:null, loaded:false},
-      ankara:{geojson:null, loaded:false}
-    };
-    let useML=true;
-    let visibleClasses={1:true,2:true,3:true,4:true,5:true};
-    let currentColorScheme='risk';
-    let currentChoroplethVar='risk_class_5';
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  // -------- STATE
+  let map, view='all', city='istanbul';
+  const cityData = { istanbul:{gj:null, layer:null, loaded:false}, ankara:{gj:null, layer:null, loaded:false} };
+  const riskColors={1:'#2ECC71',2:'#F1C40F',3:'#E67E22',4:'#E74C3C',5:'#8E44AD'};
+  const riskLabels={1:'Çok Düşük',2:'Düşük',3:'Orta',4:'Yüksek',5:'Çok Yüksek'};
+  let choroVar='risk_class_5';
 
-    // Colors & labels
-    const riskColors={1:'#2ecc71',2:'#f1c40f',3:'#e67e22',4:'#e74c3c',5:'#8e44ad'};
-    const riskLabels={1:'Çok Düşük',2:'Düşük',3:'Orta',4:'Yüksek',5:'Çok Yüksek'};
-    const colorSchemes={sequential:['#f0f9ff','#bae6fd','#7dd3fc','#38bdf8','#0ea5e9','#0284c7'],
-                        diverging:['#0ea5e9','#7dd3fc','#f0f9ff','#fbbf24','#f59e0b','#ea580c']};
+  // -------- INIT
+  (async function init(){
+    setLoad('Harita başlatılıyor…'); initMap();
+    setLoad('İstanbul verileri yükleniyor…'); await loadCity('istanbul','/data/istanbul_mahalle_risk.geojson');
+    setLoad('Ankara verileri yükleniyor…');   await loadCity('ankara','/data/ankara_mahalle_risk.geojson');
+    buildMahList(); draw(); updateStats(); renderLegend(); initCharts(); hideLoad();
+  })();
 
-    // ------- Init -------
-    async function init(){
-      try{
-        updateLoadingStatus('Harita başlatılıyor...'); initMap();
-        updateLoadingStatus('İstanbul verileri yükleniyor...'); await loadCity('istanbul');
-        updateLoadingStatus('Ankara verileri yükleniyor...'); await loadCity('ankara');
-        updateLoadingStatus('Mahalle listeleri oluşturuluyor...'); buildCityMahalleLists(); buildMahalleDropdown();
-        updateLoadingStatus('Harita render ediliyor...'); showAllMahalleler();
-        updateLoadingStatus('Grafikler hazırlanıyor...'); initCharts();
-        updateLoadingStatus('İstatistikler hesaplanıyor...'); updateLegend(); updateStats(); updateHeaderStats();
-        document.getElementById('loading').style.display='none'; showSuccess('✅ Tüm veriler başarıyla yüklendi!');
-      }catch(err){
-        console.error(err);
-        document.getElementById('loading').innerHTML = '<div class="loading-content"><div class="error-box"><strong>❌ Hata:</strong> '+(err.message||err)+'</div></div>';
-      }
-    }
-    function updateLoadingStatus(m){const el=document.getElementById('loadingStatus'); if(el) el.textContent=m;}
+  function setLoad(t){ document.getElementById('loadtxt').textContent=t; }
+  function hideLoad(){ document.getElementById('loading').style.display='none'; }
 
-    // ------- Load real GeoJSON from /public/data -------
-    async function loadCity(cityKey){
-      const files={
-        istanbul:'/data/istanbul_mahalle_risk.geojson',
-        ankara:'/data/ankara_mahalle_risk.geojson'
-      };
-      try{
-        const res=await fetch(files[cityKey]);
-        if(!res.ok) throw new Error(cityKey+' dosyası bulunamadı: '+files[cityKey]);
-        const gj=await res.json();
-        // normalize: add city key
-        (gj.features||[]).forEach(f=>{ if(!f.properties) f.properties={}; f.properties.city=cityKey; });
-        cityData[cityKey].geojson=gj;
-        cityData[cityKey].loaded=true;
-        console.log('✓ '+cityKey+' yüklendi. feature:', gj.features?.length||0);
-      }catch(e){
-        console.warn('⚠', cityKey, 'yüklenemedi:', e.message);
-        cityData[cityKey].geojson={type:'FeatureCollection',features:[]};
-        cityData[cityKey].loaded=false;
-      }
-    }
+  // -------- MAP
+  function initMap(){
+    map = L.map('map').setView([39.9,32.8],6);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map);
+  }
 
-    // ------- UI Builders -------
-    function buildCityMahalleLists(){
-      cityMahalleler={istanbul:[], ankara:[]};
-      Object.keys(cityData).forEach(k=>{
-        const gj=cityData[k].geojson;
-        if(!gj||!gj.features) return;
-        gj.features.forEach(feat=>{
-          const p=feat.properties||{};
-          const name=p.mahalle_adi||p.Name||p.name||'Bilinmeyen';
-          const ilce=p.ilce_adi||p.district||'Bilinmeyen';
-          cityMahalleler[k].push({name, ilce, cityKey:k, city:k==='istanbul'?'İstanbul':'Ankara', feature:feat, mah_id:p.mah_id, risk:getRiskClass(feat)});
-        });
-        cityMahalleler[k].sort((a,b)=>a.name.localeCompare(b.name,'tr'));
-      });
+  async function loadCity(key,url){
+    try{
+      const r = await fetch(url); if(!r.ok) throw new Error(url+' bulunamadı');
+      const gj = await r.json();
+      (gj.features||[]).forEach(f=>{ f.properties=f.properties||{}; f.properties.city=key; });
+      cityData[key].gj = gj; cityData[key].loaded = true;
+    }catch(e){
+      console.warn(key,'yüklenemedi:',e.message); cityData[key].gj={type:'FeatureCollection',features:[]};
     }
-    function buildMahalleDropdown(){
-      const select=document.getElementById('mahalleSelect');
-      const list=cityMahalleler[selectedCity]||[];
-      select.innerHTML='<option value="">-- Mahalle Seçiniz --</option>';
-      list.forEach((mah, idx)=>{
-        const riskIcon=['','🟢','🟡','🟠','🔴','🟣'][mah.risk]||'';
-        const opt=document.createElement('option');
-        opt.value=idx; opt.textContent=`${riskIcon} ${mah.name} (${mah.ilce})`; select.appendChild(opt);
-      });
-    }
-    function selectCity(k){
-      selectedCity=k;
-      document.getElementById('cityIstanbul').classList.toggle('active',k==='istanbul');
-      document.getElementById('cityAnkara').classList.toggle('active',k==='ankara');
-      document.getElementById('selectedCityLabel').textContent=k==='istanbul'?'İstanbul':'Ankara';
-      buildMahalleDropdown(); document.getElementById('mahalleSelect').value=''; document.getElementById('mahalleInfo').style.display='none';
-    }
-    function selectMahalle(){
-      const idx=document.getElementById('mahalleSelect').value;
-      if(!idx){document.getElementById('mahalleInfo').style.display='none';return;}
-      const mah=cityMahalleler[selectedCity][idx];
-      const riskIcon=['','🟢','🟡','🟠','🔴','🟣'][mah.risk]||'';
-      document.getElementById('mahalleDetails').innerHTML = `<div style="font-weight:600;margin-bottom:.5rem;font-size:1rem;">${riskIcon} ${mah.name}</div>
-        <div><strong>İlçe:</strong> ${mah.ilce}</div>
-        <div><strong>Risk Sınıfı:</strong> ${mah.risk} - ${riskLabels[mah.risk]||'-'}</div>
-        <div><strong>Şehir:</strong> ${mah.city}</div>`;
-      document.getElementById('mahalleInfo').style.display='block';
-      if(currentView!=='all' && currentView!==mah.cityKey) switchView(mah.cityKey);
-      setTimeout(()=>{
-        const layer=cityLayers[mah.cityKey]; if(!layer) return;
-        const t=layer.getLayers().find(l=>l.feature===mah.feature);
-        if(t){ const b=t.getBounds(); map.fitBounds(b,{padding:[100,100]}); setTimeout(()=>t.fire('click',{latlng:b.getCenter()}),600); }
-      },300);
-    }
+  }
 
-    // ------- Map & Layers -------
-    function initMap(){ map=L.map('map').setView([39.9,32.5],7);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap',maxZoom:18}).addTo(map); }
-    function switchView(v){
-      currentView=v;
-      document.getElementById('btnAll').classList.toggle('active',v==='all');
-      document.getElementById('btnIstanbul').classList.toggle('active',v==='istanbul');
-      document.getElementById('btnAnkara').classList.toggle('active',v==='ankara');
-      Object.keys(cityLayers).forEach(k=>{ if(cityLayers[k]){ map.removeLayer(cityLayers[k]); cityLayers[k]=null; } });
-      if(v==='all'){ showAllMahalleler(); }
-      else if(v==='istanbul'){ showCity('istanbul'); map.flyTo([41.02,29.0],10,{duration:1}); }
-      else if(v==='ankara'){ showCity('ankara'); map.flyTo([39.93,32.85],10,{duration:1}); }
-      updateLegend(); updateStats();
-    }
-    function showAllMahalleler(){
-      if(cityData.istanbul.loaded) showCity('istanbul');
-      if(cityData.ankara.loaded) showCity('ankara');
-      try{ const b=L.latLngBounds([[39.0,26.0],[42.0,35.0]]); map.fitBounds(b,{padding:[50,50]}); }catch{ map.setView([39.9,32.5],7); }
-    }
-    function showCity(k){
-      const gj=cityData[k].geojson; if(!gj||!gj.features) return;
-      cityLayers[k]=L.geoJSON(gj,{style:getFeatureStyle, onEachFeature:(f,layer)=>{
-        layer.on({mouseover:(e)=>{e.target.setStyle({weight:3,color:'#000',fillOpacity:.9}); e.target.bringToFront();},
-                  mouseout:(e)=>{cityLayers[k].resetStyle(e.target);},
-                  click:(e)=>showPopup(f,e.latlng)});
-      }}).addTo(map);
-    }
-    function getFeatureStyle(f){
-      const value=f.properties[currentChoroplethVar];
-      let color;
-      if(currentColorScheme==='risk' || currentChoroplethVar==='risk_class_5'){
-        const rc=getRiskClass(f); color=riskColors[rc]||'#cccccc';
-      }else{ color=getSequentialColor(value,currentChoroplethVar); }
-      return {fillColor:color, weight:1, opacity:1, color:'#555', fillOpacity:.7};
-    }
-    function getSequentialColor(value, variable){
-      if(value==null) return '#cccccc';
-      const vals=[];
-      Object.keys(cityData).forEach(k=>{
-        const gj=cityData[k].geojson; if(!gj) return;
-        gj.features.forEach(ft=>{const v=ft.properties[variable]; if(v!=null) vals.push(Number(v));});
-      });
-      if(!vals.length) return '#cccccc';
-      const min=Math.min(...vals), max=Math.max(...vals);
-      const norm=(Number(value)-min)/(max-min||1);
-      const colors=currentColorScheme==='diverging'? colorSchemes.diverging : colorSchemes.sequential;
-      const idx=Math.floor(norm*(colors.length-1));
-      return colors[Math.min(Math.max(idx,0), colors.length-1)];
-    }
-    function getRiskClass(f){
-      const p=f.properties||{};
-      if(useML && p.ml_predicted_class) return Number(p.ml_predicted_class);
-      // normalize: farklı kolon isimlerini yakala
-      return Number(p.risk_class_5 ?? p.risk_label_5li ?? p.risk_label_normalized ?? 0) || 0;
-    }
-    function normalizedRiskScore(p){
-      // 0–100 ölçeğine getir (combined_risk_index 0–100 olabilir; bilesik_risk_skoru 0–1 olabilir)
-      if(p.combined_risk_index!=null) return Number(p.combined_risk_index);
-      if(p.risk_score!=null) return Number(p.risk_score);
-      if(p.bilesik_risk_skoru!=null){ const v=Number(p.bilesik_risk_skoru); return v>1?v:(v*100); }
-      return null;
-    }
-    function showPopup(f, latlng){
-      const p=f.properties||{};
-      const rc=getRiskClass(f);
-      const riskScore = useML && p.ml_risk_score!=null ? Number(p.ml_risk_score) : normalizedRiskScore(p);
-      const name=p.mahalle_adi||p.Name||p.name||'Bilinmeyen';
-      const ilce=p.ilce_adi||p.district||'Bilinmeyen';
-      const vs30 = p.vs30_mean ?? p.vs30;
-      const pga  = p.pga_scenario_mw75 ?? p.pga_total_scenario ?? p.pga_scenario_mw72;
+  function draw(){
+    // temizle
+    Object.values(cityData).forEach(c=>{ if(c.layer){ map.removeLayer(c.layer); c.layer=null; } });
 
-      let html = `<div style="font-family:'Inter',sans-serif;min-width:220px;">
-        <h4 style="margin:0 0 10px;color:#1e293b;border-bottom:2px solid #667eea;padding-bottom:5px;">${name}</h4>
-        <div style="margin:5px 0;"><strong>İlçe:</strong> ${ilce}</div>
-        <div style="margin:5px 0;"><strong>Şehir:</strong> ${p.city==='istanbul'?'İstanbul':'Ankara'}</div>
-        <div style="margin:8px 0;padding:10px;background:${riskColors[rc]||'#ccc'};color:#fff;border-radius:5px;font-weight:600;text-align:center;">
-          Risk Sınıfı: ${rc||'-'} ${riskLabels[rc]?' - '+riskLabels[rc]:''}
-        </div>
-        <div style="margin:5px 0;"><strong>Risk Skoru:</strong> ${riskScore!=null?riskScore.toFixed(2):'N/A'}</div>`;
-      if(vs30!=null) html+=`<div style="margin:5px 0;"><strong>VS30:</strong> ${Number(vs30).toFixed(0)} m/s</div>`;
-      if(pga!=null)  html+=`<div style="margin:5px 0;"><strong>PGA (Mw7.5):</strong> ${Number(pga).toFixed(4)} g</div>`;
-      if(useML && p.ml_confidence!=null) html+=`<div style="margin-top:8px;padding-top:8px;border-top:1px solid #ddd;"><strong>ML Güven:</strong> ${(Number(p.ml_confidence)*100).toFixed(1)}%</div>`;
-      html+='</div>';
-      L.popup().setLatLng(latlng).setContent(html).openOn(map);
-    }
-
-    // ------- Legend & Stats -------
-    function updateLegend(){
-      const counts={1:0,2:0,3:0,4:0,5:0}; let total=0;
-      Object.keys(cityData).forEach(k=>{
-        const gj=cityData[k].geojson; if(!gj) return;
-        if(currentView==='all'||currentView===k){
-          gj.features.forEach(f=>{ const rc=getRiskClass(f); if(rc){counts[rc]++; total++;} });
-        }
-      });
-      const legend=document.getElementById('legendItems'); legend.innerHTML='';
-      for(let i=1;i<=5;i++){
-        const div=document.createElement('div'); div.className='legend-item'; div.onclick=()=>toggleClass(i);
-        div.innerHTML=`<div class="legend-color" style="background:${riskColors[i]};opacity:${visibleClasses[i]?1:.3}"></div>
-                       <span class="legend-label">Sınıf ${i} - ${riskLabels[i]}</span>
-                       <span class="legend-count">${counts[i]}</span>`;
-        legend.appendChild(div);
-      }
-    }
-    function toggleClass(n){ visibleClasses[n]=!visibleClasses[n]; switchView(currentView); }
-    function updateStats(){
-      const counts={1:0,2:0,3:0,4:0,5:0}; let total=0; let sumRisk=0;
-      Object.keys(cityData).forEach(k=>{
-        const gj=cityData[k].geojson; if(!gj) return;
-        if(currentView==='all'||currentView===k){
-          gj.features.forEach(f=>{
-            const rc=getRiskClass(f);
-            if(rc && visibleClasses[rc]){ counts[rc]++; total++; const sc=normalizedRiskScore(f.properties); if(sc!=null) sumRisk+=Number(sc); }
+    const keys = (view==='all') ? ['istanbul','ankara'] : [view];
+    keys.forEach(k=>{
+      const gj = cityData[k].gj; if(!gj) return;
+      cityData[k].layer = L.geoJSON(gj,{
+        // SADECE POLİGONLARI çiz (OSM nokta/çizgi pinleri görünmesin)
+        filter: f => ['Polygon','MultiPolygon'].includes(f.geometry?.type),
+        style: f => {
+          const color = colorForFeature(f);
+          return {fillColor:color, color:'#555', weight:1, opacity:1, fillOpacity:.7};
+        },
+        onEachFeature:(f,layer)=>{
+          layer.on({
+            mouseover:e=>{e.target.setStyle({weight:3,color:'#000',fillOpacity:.9});e.target.bringToFront();},
+            mouseout:e=>{cityData[k].layer.resetStyle(e.target);},
+            click:e=>popup(f,e.latlng)
           });
         }
+      }).addTo(map);
+    });
+
+    // fit
+    const allCoords=[];
+    keys.forEach(k=>{
+      const gj=cityData[k].gj;
+      (gj.features||[]).forEach(f=>{
+        const g=f.geometry||{};
+        if(g.type==='Polygon') allCoords.push(...g.coordinates.flat(1));
+        if(g.type==='MultiPolygon') allCoords.push(...g.coordinates.flat(2));
       });
-      document.getElementById('totalCount').textContent=total;
-      document.getElementById('avgRisk').textContent= total>0?(sumRisk/total).toFixed(2):'0';
-      document.getElementById('highRisk').textContent=counts[4]+counts[5];
+    });
+    if(allCoords.length){
+      const xs=allCoords.map(c=>c[0]), ys=allCoords.map(c=>c[1]);
+      map.fitBounds([[Math.min(...ys),Math.min(...xs)],[Math.max(...ys),Math.max(...xs)]],{padding:[30,30]});
     }
-    function updateHeaderStats(){
-      let total=0, sumRisk=0, high=0;
-      Object.keys(cityData).forEach(k=>{
-        const gj=cityData[k].geojson; if(!gj) return;
-        gj.features.forEach(f=>{ const rc=getRiskClass(f); if(rc){ total++; const sc=normalizedRiskScore(f.properties); if(sc!=null) sumRisk+=Number(sc); if(rc>=4) high++; } });
+  }
+
+  function colorForFeature(f){
+    const p=f.properties||{};
+    if(choroVar==='risk_class_5'){
+      const rc = getRiskClass(p);
+      return riskColors[rc]||'#cccccc';
+    }
+    // ardışık renkler (sequential)
+    const vals = [];
+    ['istanbul','ankara'].forEach(k=>{
+      (cityData[k].gj.features||[]).forEach(ft=>{
+        const v = num(ft.properties[choroVar]); if(Number.isFinite(v)) vals.push(v);
       });
-      document.getElementById('headerTotal').textContent=total;
-      document.getElementById('headerAvg').textContent= total>0?(sumRisk/total).toFixed(2):'0';
-      document.getElementById('headerHigh').textContent=high;
-    }
-    function setColorScheme(s){ currentColorScheme=s; document.querySelectorAll('.scheme-btn').forEach(b=>b.classList.toggle('active',b.dataset.scheme===s)); switchView(currentView); }
-    function updateChoropleth(){
-      currentChoroplethVar=document.getElementById('choroplethVariable').value;
-      const mapNames={'risk_class_5':'Risk Sınıfı (1-5)','risk_score':'Risk Skoru','ml_risk_score':'ML Risk Skoru','vs30_mean':'VS30 Ortalama (m/s)','pga_scenario_mw75':'PGA Senaryo (g)','toplam_nufus':'Toplam Nüfus','toplam_bina':'Toplam Bina Sayısı'};
-      document.getElementById('variableInfo').textContent='Seçili: '+(mapNames[currentChoroplethVar]||currentChoroplethVar);
-      switchView(currentView);
-    }
+    });
+    if(!vals.length) return '#cccccc';
+    const v = num(p[choroVar]); if(!Number.isFinite(v)) return '#cccccc';
+    const min=Math.min(...vals), max=Math.max(...vals), t=(v-min)/((max-min)||1);
+    const palette=['#f0f9ff','#bae6fd','#7dd3fc','#38bdf8','#0ea5e9','#0284c7'];
+    const i=Math.max(0,Math.min(palette.length-1, Math.floor(t*(palette.length-1))));
+    return palette[i];
+  }
 
-    // ------- Charts -------
-    let scatterChart, correlationChart, distributionChart;
-    function initCharts(){
-      const sctx=document.getElementById('scatterChart').getContext('2d');
-      scatterChart=new Chart(sctx,{type:'scatter',data:{datasets:[]},options:{responsive:true,maintainAspectRatio:false,plugins:{title:{display:true,text:'Scatter Analizi',font:{size:16,weight:'bold'}},legend:{display:true,position:'top'}},scales:{x:{title:{display:true,text:'X Ekseni'}},y:{title:{display:true,text:'Y Ekseni'}}}}});
-      const cctx=document.getElementById('correlationChart').getContext('2d');
-      correlationChart=new Chart(cctx,{type:'bar',data:{labels:[],datasets:[]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{title:{display:true,text:'Risk Skoru ile Korelasyon',font:{size:16,weight:'bold'}},legend:{display:false}},scales:{x:{title:{display:true,text:'Korelasyon Katsayısı'},min:-1,max:1}}}});
-      const dctx=document.getElementById('distributionChart').getContext('2d');
-      distributionChart=new Chart(dctx,{type:'bar',data:{labels:[],datasets:[]},options:{responsive:true,maintainAspectRatio:false,plugins:{title:{display:true,text:'Dağılım Analizi',font:{size:16,weight:'bold'}},legend:{display:false}}}});
-    }
-    function gatherAllFeatures(filterByView=true){
-      const arr=[];
-      Object.keys(cityData).forEach(k=>{
-        const gj=cityData[k].geojson; if(!gj) return;
-        if(!filterByView || currentView==='all' || currentView===k){ arr.push(...gj.features); }
-      }); return arr;
-    }
-    function updateScatter(){
-      const xVar=document.getElementById('scatterX').value;
-      const yVar=document.getElementById('scatterY').value;
-      const cVar=document.getElementById('scatterColor').value;
-      const feats=gatherAllFeatures();
-      const data=feats.map(f=>({x:Number(f.properties[xVar]), y:Number(f.properties[yVar]), color:f.properties[cVar]})).filter(d=>Number.isFinite(d.x)&&Number.isFinite(d.y));
-      const datasets=[];
-      if(cVar==='risk_class_5'||cVar==='ml_predicted_class'){
-        for(let i=1;i<=5;i++){ const pts=data.filter(d=>Number(d.color)===i);
-          if(pts.length) datasets.push({label:`Risk ${i}`, data:pts, backgroundColor:riskColors[i], pointRadius:5}); }
-      }else{ datasets.push({label:'Tüm Veriler', data, backgroundColor:'#667eea', pointRadius:5}); }
-      scatterChart.data.datasets=datasets;
-      scatterChart.options.scales.x.title.text=document.getElementById('scatterX').selectedOptions[0].text;
-      scatterChart.options.scales.y.title.text=document.getElementById('scatterY').selectedOptions[0].text;
-      scatterChart.update();
-    }
-    function updateCorrelation(){
-      const vars=[
-        {key:'toplam_nufus',name:'Nüfus'},
-        {key:'toplam_bina',name:'Bina'},
-        {key:'vs30_mean',name:'VS30'},
-        {key:'pga_scenario_mw75',name:'PGA'},
-        {key:'insan_etkisi_norm',name:'İnsan Etkisi'},
-        {key:'bina_etkisi_norm',name:'Bina Etkisi'},
-        {key:'zemin_etkisi_norm',name:'Zemin Etkisi'}
-      ];
-      const feats=gatherAllFeatures(false);
-      const risk=feats.map(f=>normalizedRiskScore(f.properties)).filter(v=>v!=null);
-      function corr(x,y){
-        const n=Math.min(x.length,y.length); if(!n) return 0;
-        const sx=x.slice(0,n).reduce((a,b)=>a+b,0), sy=y.slice(0,n).reduce((a,b)=>a+b,0);
-        const sxy=x.slice(0,n).reduce((t,xi,i)=>t+xi*y[i],0);
-        const sx2=x.slice(0,n).reduce((t,xi)=>t+xi*xi,0), sy2=y.slice(0,n).reduce((t,yi)=>t+yi*yi,0);
-        const num=n*sxy - sx*sy, den=Math.sqrt((n*sx2 - sx*sx)*(n*sy2 - sy*sy)); return den===0?0:num/den;
+  function popup(f, latlng){
+    const p=f.properties||{};
+    const name = p.mahalle_adi||p.Name||p.name||'Mahalle';
+    const ilce = p.ilce_adi||p.district||'—';
+    const rc = getRiskClass(p);
+    const riskScore = normalizedRisk(p);
+    const vs30 = p.vs30_mean ?? p.vs30;
+    const pga  = p.pga_scenario_mw75 ?? p.pga_total_scenario ?? p.pga_scenario_mw72;
+
+    let html = `<div style="min-width:220px;font:12px/1.4 Inter,system-ui,sans-serif">
+      <div style="font-weight:700;margin-bottom:6px">${name}</div>
+      <div>İlçe: <b>${ilce}</b></div>
+      <div style="margin:6px 0;padding:8px;border-radius:6px;color:#fff;background:${riskColors[rc]||'#999'}">
+        Risk Sınıfı: <b>${rc||'-'}</b> ${riskLabels[rc]?' - '+riskLabels[rc]:''}
+      </div>
+      <div>Risk Skoru: <b>${riskScore!=null?riskScore.toFixed(2):'-'}</b></div>
+      ${vs30!=null?`<div>VS30: <b>${Number(vs30).toFixed(0)}</b> m/s</div>`:''}
+      ${pga!=null?`<div>PGA (Mw7.5): <b>${Number(pga).toFixed(4)}</b> g</div>`:''}
+    </div>`;
+    L.popup().setLatLng(latlng).setContent(html).openOn(map);
+  }
+
+  function getRiskClass(p){
+    return Number(p.risk_class_5 ?? p.risk_label_5li ?? p.risk_label_normalized ?? 0) || 0;
+  }
+  function normalizedRisk(p){
+    if(p.combined_risk_index!=null) return Number(p.combined_risk_index);
+    if(p.risk_score!=null) return Number(p.risk_score);
+    if(p.bilesik_risk_skoru!=null){ const v=Number(p.bilesik_risk_skoru); return v>1?v:(v*100); }
+    return null;
+  }
+  const num = v => (v==null?NaN:Number(v));
+
+  // -------- UI
+  function selectCity(k){
+    city=k;
+    document.getElementById('btnCityIST').classList.toggle('active',k==='istanbul');
+    document.getElementById('btnCityANK').classList.toggle('active',k==='ankara');
+    document.getElementById('cityLabel').textContent=k==='istanbul'?'İstanbul':'Ankara';
+    buildMahList();
+  }
+  function switchView(v){
+    view=v;
+    document.getElementById('viewAll').classList.toggle('active',v==='all');
+    document.getElementById('viewIst').classList.toggle('active',v==='istanbul');
+    document.getElementById('viewAnk').classList.toggle('active',v==='ankara');
+    draw(); updateStats(); renderLegend();
+  }
+  function buildMahList(){
+    const list = (cityData[city].gj.features||[]).map(f=>{
+      const p=f.properties||{}; return {name:p.mahalle_adi||p.Name||p.name||'Mahalle', ilce:p.ilce_adi||p.district||'', f};
+    }).sort((a,b)=>a.name.localeCompare(b.name,'tr'));
+    const sel=document.getElementById('mahSelect'); sel.innerHTML='<option value="">-- Mahalle Seçiniz --</option>';
+    list.forEach((m,i)=>{ const o=document.createElement('option'); o.value=i; o.textContent=`${m.name} (${m.ilce})`; sel.appendChild(o); });
+    sel.dataset.count = list.length;
+    sel.dataset.city = city;
+    sel._data = list;
+  }
+  function selectMahalle(){
+    const sel=document.getElementById('mahSelect');
+    if(sel.value===''){ document.getElementById('mahInfo').style.display='none'; return; }
+    const m = sel._data[Number(sel.value)];
+    document.getElementById('mahInfo').style.display='block';
+    document.getElementById('mahInfo').innerHTML = `<b>${m.name}</b> – ${m.ilce}`;
+    // zoom
+    const g=m.f.geometry;
+    let bounds;
+    if(g.type==='Polygon'){ const ll=g.coordinates[0].map(c=>[c[1],c[0]]); bounds=L.latLngBounds(ll); }
+    if(g.type==='MultiPolygon'){ const ll=g.coordinates.flat(1)[0].map(c=>[c[1],c[0]]); bounds=L.latLngBounds(ll); }
+    if(bounds) map.fitBounds(bounds,{padding:[60,60]});
+  }
+  function updateChoropleth(){
+    choroVar=document.getElementById('choroVar').value;
+    const labels={
+      risk_class_5:'Risk Sınıfı', risk_score:'Risk Skoru',
+      vs30_mean:'VS30 Ortalama', pga_scenario_mw75:'PGA (Mw7.5)',
+      toplam_nufus:'Nüfus', toplam_bina:'Bina'
+    };
+    document.getElementById('varNote').textContent='Seçili: '+(labels[choroVar]||choroVar);
+    draw(); renderLegend();
+  }
+
+  function renderLegend(){
+    const wrap=document.getElementById('legend'); wrap.innerHTML='';
+    if(choroVar==='risk_class_5'){
+      for(let i=1;i<=5;i++){
+        const row=document.createElement('div'); row.className='legend-item';
+        row.innerHTML=`<div class="legend-swatch" style="background:${riskColors[i]}"></div><div>Sınıf ${i} – ${riskLabels[i]}</div>`;
+        wrap.appendChild(row);
       }
-      const corrs=vars.map(v=>{ const vals=feats.map(f=>Number(f.properties[v.key])).filter(Number.isFinite); return {name:v.name, value:corr(risk.slice(0,vals.length), vals)}; })
-                       .sort((a,b)=>Math.abs(b.value)-Math.abs(a.value));
-      correlationChart.data.labels=corrs.map(c=>c.name);
-      correlationChart.data.datasets=[{label:'Korelasyon', data:corrs.map(c=>c.value), backgroundColor:corrs.map(c=>c.value>0?'#667eea':'#e74c3c')}];
-      correlationChart.update();
+    }else{
+      const row=document.createElement('div'); row.className='legend-item';
+      row.innerHTML=`<div class="legend-swatch" style="background:#f0f9ff"></div><div> düşük</div>`;
+      wrap.appendChild(row);
+      const row2=document.createElement('div'); row2.className='legend-item';
+      row2.innerHTML=`<div class="legend-swatch" style="background:#0284c7"></div><div> yüksek</div>`;
+      wrap.appendChild(row2);
     }
-    function updateDistribution(){
-      const v=document.getElementById('distVariable').value;
-      const feats=gatherAllFeatures();
-      let distribution={};
-      if(v==='risk_class_5'){
-        feats.forEach(f=>{ const rc=getRiskClass(f); if(rc) distribution['Risk '+rc]=(distribution['Risk '+rc]||0)+1; });
-      }else if(v==='ilce_adi'){
-        feats.forEach(f=>{ const il=f.properties.ilce_adi||'Bilinmeyen'; distribution[il]=(distribution[il]||0)+1; });
-      }else{
-        const vals=feats.map(f=>Number(f.properties[v])).filter(Number.isFinite);
-        const min=Math.min(...vals), max=Math.max(...vals), bins=10, size=(max-min)/(bins||1);
-        for(let i=0;i<bins;i++){ const s=min+i*size, e=s+size; const label=`${s.toFixed(0)}-${e.toFixed(0)}`; distribution[label]=vals.filter(val=>val>=s && val<e).length; }
+  }
+
+  function updateStats(){
+    const feats = (view==='all')
+      ? [...(cityData.istanbul.gj.features||[]), ...(cityData.ankara.gj.features||[])]
+      : (cityData[view].gj.features||[]);
+    const total = feats.length;
+    let sum=0, cnt=0, high=0;
+    feats.forEach(f=>{
+      const rc = getRiskClass(f.properties||{});
+      const sc = normalizedRisk(f.properties||{});
+      if(rc>=4) high++;
+      if(sc!=null){ sum+=Number(sc); cnt++; }
+    });
+    document.getElementById('statTotal').textContent=total;
+    document.getElementById('statAvg').textContent= cnt? (sum/cnt).toFixed(2) : '0';
+    document.getElementById('statHigh').textContent=high;
+  }
+
+  // -------- TABS + CHARTS
+  function switchTab(id){
+    ['map','scatter','corr','dist'].forEach(t=>{
+      document.getElementById('tab-'+t).classList.toggle('active',t===id);
+      document.getElementById('view-'+t).classList.toggle('active',t===id);
+    });
+    if(id==='scatter') updateScatter();
+    if(id==='corr') updateCorr();
+    if(id==='dist') updateDist();
+    if(id==='map') setTimeout(()=>map.invalidateSize(),50);
+  }
+
+  let scatterChart, corrChart, distChart;
+  function initCharts(){
+    scatterChart = new Chart(document.getElementById('scatter').getContext('2d'), {
+      type:'scatter',
+      data:{datasets:[]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{position:'top'},title:{display:true,text:'Scatter Analizi'}},
+        scales:{x:{title:{display:true,text:'X'}},y:{title:{display:true,text:'Y'}}}
       }
-      const labels=Object.keys(distribution), data=Object.values(distribution);
-      distributionChart.data.labels=labels;
-      distributionChart.data.datasets=[{label:'Sayı', data, backgroundColor:'#667eea'}];
-      distributionChart.update();
+    });
+    corrChart = new Chart(document.getElementById('corr').getContext('2d'), {
+      type:'bar',
+      data:{labels:[],datasets:[]},
+      options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',
+        plugins:{legend:{display:false},title:{display:true,text:'Risk Skoru ile Korelasyon'}},
+        scales:{x:{min:-1,max:1}}
+      }
+    });
+    distChart = new Chart(document.getElementById('dist').getContext('2d'), {
+      type:'bar',
+      data:{labels:[],datasets:[]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},title:{display:true,text:'Dağılım'}}}
+    });
+  }
+
+  function collectFeats(){
+    const arr=[];
+    if(view==='all'){ arr.push(...(cityData.istanbul.gj.features||[]), ...(cityData.ankara.gj.features||[])); }
+    else { arr.push(...(cityData[view].gj.features||[])); }
+    return arr;
+  }
+
+  function updateScatter(){
+    const xk = document.getElementById('sx').value;
+    const yk = document.getElementById('sy').value;
+    const ck = document.getElementById('sc').value;
+    const feats = collectFeats();
+
+    const pts = feats.map(f=>{
+      const p=f.properties||{};
+      const x=num(p[xk]), y=num(p[yk]); const c=p[ck];
+      return Number.isFinite(x)&&Number.isFinite(y) ? {x,y,c} : null;
+    }).filter(Boolean);
+
+    const datasets=[];
+    if(ck==='risk_class_5'){
+      for(let i=1;i<=5;i++){
+        const ds = pts.filter(p=>Number(p.c)===i);
+        if(ds.length) datasets.push({label:'Risk '+i, data:ds, backgroundColor:riskColors[i], pointRadius:4});
+      }
+    }else{
+      datasets.push({label:'Veri', data:pts, backgroundColor:'#667eea', pointRadius:4});
     }
+    scatterChart.data.datasets = datasets;
+    scatterChart.options.scales.x.title.text = document.getElementById('sx').selectedOptions[0].text;
+    scatterChart.options.scales.y.title.text = document.getElementById('sy').selectedOptions[0].text;
+    scatterChart.update();
+  }
 
-    // ------- Helpers -------
-    function showError(m){ document.getElementById('errorContainer').innerHTML='<div class="error-box">⚠️ '+m+'</div>'; }
-    function showSuccess(m){ const el=document.getElementById('errorContainer'); el.innerHTML='<div class="success-box">'+m+'</div>'; setTimeout(()=>{el.innerHTML='';},3000); }
+  function updateCorr(){
+    const feats = collectFeats();
+    const risk = feats.map(f=>normalizedRisk(f.properties||{})).filter(v=>v!=null);
+    const vars = [
+      {k:'toplam_nufus', n:'Nüfus'},
+      {k:'toplam_bina', n:'Bina'},
+      {k:'vs30_mean', n:'VS30'},
+      {k:'pga_scenario_mw75', n:'PGA'}
+    ];
+    function corr(a,b){
+      const n=Math.min(a.length,b.length); if(!n) return 0;
+      const ax=a.slice(0,n), bx=b.slice(0,n);
+      const sa=ax.reduce((s,v)=>s+v,0), sb=bx.reduce((s,v)=>s+v,0);
+      const sxy=ax.reduce((s,v,i)=>s+v*bx[i],0);
+      const sxx=ax.reduce((s,v)=>s+v*v,0), syy=bx.reduce((s,v)=>s+v*v,0);
+      const num=n*sxy-sa*sb, den=Math.sqrt((n*sxx-sa*sa)*(n*syy-sb*sb)); return den?num/den:0;
+    }
+    const results = vars.map(v=>{
+      const x=feats.map(f=>num((f.properties||{})[v.k])).filter(Number.isFinite);
+      return {n:v.n, c:corr(risk.slice(0,x.length), x)};
+    }).sort((a,b)=>Math.abs(b.c)-Math.abs(a.c));
 
-    // ------- Start -------
-    init();
-  </script>
+    corrChart.data.labels = results.map(r=>r.n);
+    corrChart.data.datasets = [{label:'Korelasyon', data:results.map(r=>r.c), backgroundColor:results.map(r=>r.c>=0?'#667eea':'#e74c3c')}];
+    corrChart.update();
+  }
+
+  function updateDist(){
+    const key = document.getElementById('dv').value;
+    const feats = collectFeats();
+    let labels=[], data=[];
+    if(key==='risk_class_5'){
+      const c=[0,0,0,0,0];
+      feats.forEach(f=>{ const rc=getRiskClass(f.properties||{}); if(rc>=1&&rc<=5) c[rc-1]++; });
+      labels=['1','2','3','4','5']; data=c;
+    }else if(key==='ilce_adi'){
+      const map={}; feats.forEach(f=>{ const il=(f.properties||{}).ilce_adi||'—'; map[il]=(map[il]||0)+1; });
+      labels=Object.keys(map); data=Object.values(map);
+    }else{
+      const vals=feats.map(f=>num((f.properties||{})[key])).filter(Number.isFinite);
+      const n=10, min=Math.min(...vals), max=Math.max(...vals), step=(max-min)/(n||1);
+      for(let i=0;i<n;i++){ const s=min+i*step, e=s+step; labels.push(`${s.toFixed(0)}-${e.toFixed(0)}`); data.push(vals.filter(v=>v>=s && v<e).length); }
+    }
+    distChart.data.labels=labels; distChart.data.datasets=[{label:'Sayı', data, backgroundColor:'#667eea'}];
+    distChart.update();
+  }
+</script>
 </body>
 </html>
