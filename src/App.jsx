@@ -2,20 +2,44 @@ import { useEffect, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 
-/* ---------- yardımcılar ---------- */
-// güvenli property okuma
+/* ---------------- yardımcılar ---------------- */
 const getP = (p, keys, fb = null) => {
   for (const k of keys) if (p && p[k] !== undefined && p[k] !== null) return p[k];
   return fb;
 };
-// basit quantile
+
 const qtiles = (arr) => {
-  const a = arr.filter((x) => Number.isFinite(x)).sort((x, y) => x - y);
+  const a = arr.filter(Number.isFinite).sort((x, y) => x - y);
   if (!a.length) return { min: 0, q25: 0.25, med: 0.5, q75: 0.75, max: 1 };
   const at = (p) => a[Math.floor((a.length - 1) * p)];
   return { min: a[0], q25: at(0.25), med: at(0.5), q75: at(0.75), max: a[a.length - 1] };
 };
-/* --------------------------------- */
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/** fetch + timeout + toleranslı okuma */
+async function loadGeoJSONs(urls, timeoutMs = 12000) {
+  const timed = Promise.race([
+    Promise.allSettled(
+      urls.map((u) =>
+        fetch(u).then((r) => (r.ok ? r.json() : Promise.reject(new Error(r.statusText))))
+      )
+    ),
+    (async () => {
+      await sleep(timeoutMs);
+      return "TIMEOUT";
+    })(),
+  ]);
+
+  const res = await timed;
+  if (res === "TIMEOUT") return [];
+
+  return res
+    .filter((x) => x.status === "fulfilled")
+    .map((x) => x.value)
+    .filter(Boolean);
+}
+/* ------------------------------------------------ */
 
 export default function App() {
   const mapRef = useRef(null);
@@ -34,57 +58,82 @@ export default function App() {
       const s = stopsRef.current.risk;
       map.setPaintProperty("mah-fill", "fill-color", [
         "case",
-        // risk yoksa gri boya
-        ["!", ["to-boolean", ["coalesce",
-          ["to-number", ["get", "combined_risk_index"]],
-          ["to-number", ["get", "risk_score"]],
-          ["to-number", ["get", "bilesik_risk_skoru"]],
-          null
-        ]]],
-        "#BBBBBB",
-        // varsa quantile ile boya (0–1 veya 0–100 normalize)
+        // hiç risk değeri yoksa gri
         [
-          "interpolate", ["linear"],
-          ["let", "r",
-            ["coalesce",
+          "!",
+          [
+            "to-boolean",
+            [
+              "coalesce",
               ["to-number", ["get", "combined_risk_index"]],
               ["to-number", ["get", "risk_score"]],
-              ["*", ["to-number", ["get", "bilesik_risk_skoru"]], 100]
-            ]
-          ,
-            ["case", [">", ["var", "r"], 1], ["var", "r"], ["*", ["var", "r"], 100]]
+              ["to-number", ["get", "bilesik_risk_skoru"]],
+              null,
+            ],
           ],
-          s.min, "#2ECC71",
-          s.q25, "#A3D977",
-          s.med, "#F1C40F",
-          s.q75, "#E67E22",
-          s.max, "#E74C3C"
-        ]
+        ],
+        "#BBBBBB",
+        // varsa (0–1 / 0–100 normalize edilerek) quantile ile boya
+        [
+          "interpolate",
+          ["linear"],
+          [
+            "let",
+            "r",
+            [
+              "coalesce",
+              ["to-number", ["get", "combined_risk_index"]],
+              ["to-number", ["get", "risk_score"]],
+              ["*", ["to-number", ["get", "bilesik_risk_skoru"]], 100],
+            ],
+            ["case", [">", ["var", "r"], 1], ["var", "r"], ["*", ["var", "r"], 100]],
+          ],
+          s.min,
+          "#2ECC71",
+          s.q25,
+          "#A3D977",
+          s.med,
+          "#F1C40F",
+          s.q75,
+          "#E67E22",
+          s.max,
+          "#E74C3C",
+        ],
       ]);
     } else {
-      // VS30 için hem vs30_mean hem vs30 destekle
+      // VS30 için hem vs30 hem vs30_mean destekle
       const s = stopsRef.current.vs30;
       map.setPaintProperty("mah-fill", "fill-color", [
         "case",
-        ["!", ["to-boolean", ["coalesce",
-          ["to-number", ["get", "vs30"]],
-          ["to-number", ["get", "vs30_mean"]],
-          null
-        ]]],
+        [
+          "!",
+          [
+            "to-boolean",
+            [
+              "coalesce",
+              ["to-number", ["get", "vs30"]],
+              ["to-number", ["get", "vs30_mean"]],
+              null,
+            ],
+          ],
+        ],
         "#BBBBBB",
         [
-          "interpolate", ["linear"],
-          ["coalesce",
-            ["to-number", ["get", "vs30"]],
-            ["to-number", ["get", "vs30_mean"]]
-          ],
+          "interpolate",
+          ["linear"],
+          ["coalesce", ["to-number", ["get", "vs30"]], ["to-number", ["get", "vs30_mean"]]],
           // düşük vs30 = zayıf zemin (kırmızı) → yüksek vs30 = sağlam (yeşil)
-          s.min, "#E74C3C",
-          s.q25, "#E67E22",
-          s.med, "#F1C40F",
-          s.q75, "#A3D977",
-          s.max, "#2ECC71"
-        ]
+          s.min,
+          "#E74C3C",
+          s.q25,
+          "#E67E22",
+          s.med,
+          "#F1C40F",
+          s.q75,
+          "#A3D977",
+          s.max,
+          "#2ECC71",
+        ],
       ]);
     }
   };
@@ -98,7 +147,7 @@ export default function App() {
       container: mapDivRef.current,
       style: styleUrl,
       center: [32.5, 40.8],
-      zoom: 6
+      zoom: 6,
     });
     mapRef.current = map;
 
@@ -106,21 +155,20 @@ export default function App() {
     popupRef.current = new maplibregl.Popup({ closeButton: true, closeOnClick: true });
 
     map.on("load", async () => {
-      // verileri çek
-      const urls = [
+      // verileri paralel ve toleranslı yükle
+      const parts = await loadGeoJSONs([
         "/data/istanbul_mahalle_risk.geojson",
-        "/data/ankara_mahalle_risk.geojson"
-      ];
-      const parts = [];
-      for (const u of urls) {
-        try { const r = await fetch(u); if (r.ok) parts.push(await r.json()); } catch {}
-      }
+        "/data/ankara_mahalle_risk.geojson",
+      ]);
       if (!parts.length) return;
 
-      const all = { type: "FeatureCollection", features: parts.flatMap(fc => fc.features || []) };
+      const all = {
+        type: "FeatureCollection",
+        features: parts.flatMap((fc) => fc.features || []),
+      };
 
       // eşikler: risk + VS30 (vs30_mean fallback)
-      const riskVals = all.features.map(f => {
+      const riskVals = all.features.map((f) => {
         const p = f.properties || {};
         const raw = getP(p, ["combined_risk_index", "risk_score"], null);
         const tr = getP(p, ["bilesik_risk_skoru"], null);
@@ -129,38 +177,54 @@ export default function App() {
         return NaN;
       });
 
-      const vs30Vals = all.features.map(
-        f => Number(getP(f.properties, ["vs30", "vs30_mean"], NaN))
+      const vs30Vals = all.features.map((f) =>
+        Number(getP(f.properties, ["vs30", "vs30_mean"], NaN))
       );
 
       stopsRef.current = { risk: qtiles(riskVals), vs30: qtiles(vs30Vals) };
 
-      // kaynak + katman
+      // kaynak + katmanlar
       map.addSource("mah", { type: "geojson", data: all });
-      map.addLayer({ id: "mah-fill", type: "fill", source: "mah",
-        paint: { "fill-color": "#CCCCCC", "fill-opacity": 0.55 } });
-      map.addLayer({ id: "mah-line", type: "line", source: "mah",
-        paint: { "line-color": "#333", "line-width": 0.6 } });
+      map.addLayer({
+        id: "mah-fill",
+        type: "fill",
+        source: "mah",
+        paint: { "fill-color": "#CCCCCC", "fill-opacity": 0.55 },
+      });
+      map.addLayer({
+        id: "mah-line",
+        type: "line",
+        source: "mah",
+        paint: { "line-color": "#333", "line-width": 0.6 },
+      });
 
       // ilk boyama
       applyChoropleth(mode);
 
-      // fit bounds
+      // fit bounds (Doğru sıra: [minX,minY] - [maxX,maxY])
       const coords = [];
       for (const f of all.features) {
-        const g = f.geometry; if (!g) continue;
+        const g = f.geometry;
+        if (!g) continue;
         if (g.type === "Polygon") coords.push(...g.coordinates.flat(1));
         else if (g.type === "MultiPolygon") coords.push(...g.coordinates.flat(2));
       }
       if (coords.length) {
-        const xs = coords.map(c => c[0]), ys = coords.map(c => c[1]);
-        map.fitBounds([[Math.min(...ys), Math.min(...xs)], [Math.max(...ys), Math.max(...xs)]],
-          { padding: 24, duration: 600 });
+        const xs = coords.map((c) => c[0]);
+        const ys = coords.map((c) => c[1]);
+        map.fitBounds(
+          [
+            [Math.min(...xs), Math.min(...ys)],
+            [Math.max(...xs), Math.max(...ys)],
+          ],
+          { padding: 24, duration: 600 }
+        );
       }
 
-      // tıklama popup
+      // tıklama → popup
       map.on("click", "mah-fill", (e) => {
-        const f = e.features?.[0]; if (!f) return;
+        const f = e.features?.[0];
+        if (!f) return;
         const p = f.properties || {};
 
         const name = getP(p, ["clean_name", "mahalle_adi", "Name", "name"], "Mahalle");
@@ -171,14 +235,20 @@ export default function App() {
           const tr = getP(p, ["bilesik_risk_skoru"], null);
           if (tr !== null) risk = Number(tr) > 1 ? Number(tr) : Number(tr) * 100;
         }
-        const label = getP(p, ["risk_label_5li", "risk_label_normalized", "risk_label", "label"], null);
+        const label = getP(
+          p,
+          ["risk_label_5li", "risk_label_normalized", "risk_label", "label"],
+          null
+        );
         const vs30 = getP(p, ["vs30", "vs30_mean"], null);
 
         const html = `
           <div style="font:12px/1.4 system-ui,sans-serif;">
             <div style="font-weight:700;margin-bottom:4px">${name}</div>
             <div>İlçe: <b>${ilce}</b></div>
-            <div>Risk: <b>${risk !== null ? Number(risk).toFixed(2) : "-"}</b>${label !== null ? ` <span style="opacity:.8">(label: ${label})</span>` : ""}</div>
+            <div>Risk: <b>${risk !== null ? Number(risk).toFixed(2) : "-"}</b>${
+          label !== null ? ` <span style="opacity:.8">(label: ${label})</span>` : ""
+        }</div>
             <div>VS30: <b>${vs30 !== null ? Number(vs30).toFixed(0) : "-"}</b> m/s</div>
           </div>`;
         popupRef.current.setLngLat(e.lngLat).setHTML(html).addTo(map);
@@ -188,31 +258,54 @@ export default function App() {
       map.on("mouseleave", "mah-fill", () => (map.getCanvas().style.cursor = ""));
     });
 
-    return () => { popupRef.current?.remove(); map.remove(); };
+    return () => {
+      popupRef.current?.remove();
+      map.remove();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // mod değişince yeniden boya
-  useEffect(() => { applyChoropleth(mode); }, [mode]);
+  useEffect(() => {
+    applyChoropleth(mode);
+  }, [mode]);
 
   return (
     <>
       {/* Mod seçici */}
-      <div style={{
-        position: "absolute", zIndex: 2, top: 16, left: 16,
-        background: "rgba(255,255,255,.95)", padding: "8px 10px",
-        borderRadius: 10, boxShadow: "0 2px 8px rgba(0,0,0,.15)",
-        fontFamily: "system-ui, sans-serif", fontSize: 12
-      }}>
+      <div
+        style={{
+          position: "absolute",
+          zIndex: 2,
+          top: 16,
+          left: 16,
+          background: "rgba(255,255,255,.95)",
+          padding: "8px 10px",
+          borderRadius: 10,
+          boxShadow: "0 2px 8px rgba(0,0,0,.15)",
+          fontFamily: "system-ui, sans-serif",
+          fontSize: 12,
+        }}
+      >
         <div style={{ fontWeight: 700, marginBottom: 6 }}>Görselleştirme</div>
         <label style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 4 }}>
-          <input type="radio" name="mode" value="risk"
-            checked={mode === "risk"} onChange={() => setMode("risk")} />
+          <input
+            type="radio"
+            name="mode"
+            value="risk"
+            checked={mode === "risk"}
+            onChange={() => setMode("risk")}
+          />
           Risk Skoru
         </label>
         <label style={{ display: "flex", gap: 6, alignItems: "center" }}>
-          <input type="radio" name="mode" value="vs30"
-            checked={mode === "vs30"} onChange={() => setMode("vs30")} />
+          <input
+            type="radio"
+            name="mode"
+            value="vs30"
+            checked={mode === "vs30"}
+            onChange={() => setMode("vs30")}
+          />
           VS30 (m/s)
         </label>
       </div>

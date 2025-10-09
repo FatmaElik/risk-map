@@ -252,13 +252,21 @@
       const gj=cityData[k].gj;
       (gj.features||[]).forEach(f=>{
         const g=f.geometry||{};
-        if(g.type==='Polygon') allCoords.push(...g.coordinates.flat(1));
-        if(g.type==='MultiPolygon') allCoords.push(...g.coordinates.flat(2));
+        if(g.type==='Polygon'){
+          g.coordinates.flat(1).forEach(c=>allCoords.push(c));
+        }
+        if(g.type==='MultiPolygon'){
+          g.coordinates.flat(2).forEach(c=>allCoords.push(c));
+        }
       });
     });
     if(allCoords.length){
-      const xs=allCoords.map(c=>c[0]), ys=allCoords.map(c=>c[1]);
-      map.fitBounds([[Math.min(...ys),Math.min(...xs)],[Math.max(...ys),Math.max(...xs)]],{padding:[30,30]});
+      let minX=Infinity, maxX=-Infinity, minY=Infinity, maxY=-Infinity;
+      allCoords.forEach(c=>{
+        if(c[0]<minX) minX=c[0]; if(c[0]>maxX) maxX=c[0];
+        if(c[1]<minY) minY=c[1]; if(c[1]>maxY) maxY=c[1];
+      });
+      map.fitBounds([[minY,minX],[maxY,maxX]],{padding:[30,30]});
     }
   }
 

@@ -1,0 +1,53 @@
+fix: Restore risk analysis data to Ankara GeoJSON and add deployment config
+
+CRITICAL FIX: Ankara GeoJSON was missing all risk analysis data after cleaning
+in QGIS. This caused the map to display empty/gray neighborhoods with no risk
+scores, demographics, or seismic data.
+
+## Changes Made
+
+### Data Fix (Critical)
+- Fixed public/data/ankara_mahalle_risk.geojson by rejoining risk data from CSV
+- Properties increased from 29 (OSM only) to 58 (full risk analysis)
+- All 786 Ankara neighborhoods now have complete risk, VS30, PGA, and demographic data
+- Created backup: ankara_mahalle_risk_backup.geojson
+
+### Deployment Configuration
+- Added vercel.json for proper routing (/, /dashboard, /dashboard.html)
+- Updated .gitignore to protect environment variables
+- Ensured both React app and dashboard routes work correctly
+
+### Code Improvements
+- Enhanced App.jsx data loading with timeout handling (12s limit)
+- Added Promise.allSettled for robust parallel GeoJSON loading
+- Improved code formatting and readability
+
+### Documentation
+- Created QUICK_START.md - Deploy in 3 steps
+- Created DEPLOYMENT.md - Full deployment guide with troubleshooting
+- Created FIXES_APPLIED.md - Detailed summary of all fixes
+- Updated README.md - Complete project documentation
+
+### Utilities
+- Added scripts/fix-ankara-geojson.js - Data repair script
+- Added scripts/verify-deployment.js - Pre-deployment verification
+
+## Verification
+
+Run before deploy:
+  node scripts/verify-deployment.js
+
+Expected: ✅ 6 checks passed, 0 errors
+
+## Data Status
+- Istanbul: 955 features, 67 properties ✅
+- Ankara: 786 features, 58 properties ✅ (FIXED)
+
+## Next Steps
+1. Add VITE_MAPTILER_KEY to Vercel environment variables
+2. Push to trigger auto-deployment
+3. Verify both / and /dashboard routes work
+
+Fixes: Site not working due to missing Ankara risk data
+Closes: #[issue number if applicable]
+
