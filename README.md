@@ -2,6 +2,8 @@
 
 Interactive seismic risk visualization dashboard for Istanbul and Ankara neighborhoods.
 
+> **Status**: ✅ Deployed and working!
+
 ## 🎯 Features
 
 - **Choropleth Maps**: Color-coded risk visualization using MapLibre GL and Leaflet
