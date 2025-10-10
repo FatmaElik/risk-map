@@ -2,8 +2,7 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "rewrites": [
-    { "source": "/dashboard", "destination": "/dashboard.html" },
-    { "source": "/dashboard.html", "destination": "/dashboard.html" }
+    { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [
     {
