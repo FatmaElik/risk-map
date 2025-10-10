@@ -603,8 +603,8 @@
     const yk = document.getElementById('sy').value;
     const ck = document.getElementById('sc').value;
     
-    // Only use features from selected city
-    const feats = cityData[city]?.gj?.features || [];
+    // Use collectFeats to get features based on current view/city
+    const feats = collectFeats();
 
     const pts = feats.map(f=>{
       const p=f.properties||{};
@@ -628,8 +628,8 @@
   }
 
   function updateCorr(){
-    // Only use features from selected city
-    const feats = cityData[city]?.gj?.features || [];
+    // Use collectFeats to get features based on current view/city
+    const feats = collectFeats();
     const risk = feats.map(f=>normalizedRisk(f.properties||{})).filter(v=>v!=null);
     const vars = [
       {k:'toplam_nufus', n:'Nüfus'},
@@ -657,8 +657,8 @@
 
   function updateDist(){
     const key = document.getElementById('dv').value;
-    // Only use features from selected city
-    const feats = cityData[city]?.gj?.features || [];
+    // Use collectFeats to get features based on current view/city
+    const feats = collectFeats();
     let labels=[], data=[];
     if(key==='risk_class_5'){
       const c=[0,0,0,0,0];
