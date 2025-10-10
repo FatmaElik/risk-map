@@ -273,6 +273,7 @@
 
   function colorForFeature(f){
     const p=f.properties||{};
+    console.log('colorForFeature - choroVar:', choroVar, 'props:', Object.keys(p).filter(k => k.includes('risk') || k.includes('bilesik'))); // Debug
     if(choroVar==='risk_class_5'){
       const rc = getRiskClass(p);
       // Debug: log the risk class for troubleshooting
@@ -466,6 +467,7 @@
 
   function renderLegend(){
     const wrap=document.getElementById('legend'); wrap.innerHTML='';
+    console.log('renderLegend - choroVar:', choroVar); // Debug
     if(choroVar==='risk_class_5'){
       for(let i=1;i<=5;i++){
         const row=document.createElement('div'); row.className='legend-item';
