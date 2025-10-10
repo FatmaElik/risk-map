@@ -88,7 +88,7 @@
         <h3><i class="fa-solid fa-gears"></i> Görselleştirme Değişkeni</h3>
         <select id="choroVar" class="select" onchange="updateChoropleth()">
           <option value="risk_class_5">Risk Sınıfı (1–5)</option>
-          <option value="risk_score">Risk Skoru</option>
+          <option value="bilesik_risk_skoru">Risk Skoru</option>
           <option value="combined_risk_index">Combined Risk Index</option>
           <option value="vs30_mean">VS30 Ortalama</option>
           <option value="pga_scenario_mw75">PGA (Mw7.5)</option>
@@ -143,7 +143,7 @@
             <div class="ctrl">
               <label>Y Ekseni</label>
               <select id="sy" class="select" onchange="updateScatter()">
-                <option value="risk_score">Risk Skoru</option>
+                <option value="bilesik_risk_skoru">Risk Skoru</option>
                 <option value="combined_risk_index">Combined Risk</option>
               </select>
             </div>
@@ -278,6 +278,14 @@
       // Debug: log the risk class for troubleshooting
       if(!rc) console.log('No risk class for:', p.mahalle_adi || p.Name, 'Props:', Object.keys(p).filter(k => k.includes('risk')));
       return riskColors[rc]||'#cccccc';
+    }else if(choroVar==='bilesik_risk_skoru'){
+      const v = num(p[choroVar]);
+      if(!Number.isFinite(v)) return '#cccccc';
+      if(v <= 0.2) return '#2ECC71';      // Çok Düşük
+      if(v <= 0.4) return '#A3D977';      // Düşük  
+      if(v <= 0.6) return '#F1C40F';      // Orta
+      if(v <= 0.8) return '#E67E22';      // Yüksek
+      return '#E74C3C';                   // Çok Yüksek (0.8+)
     }else if(choroVar==='vs30_mean'){
       const v = num(p[choroVar]);
       if(!Number.isFinite(v)) return '#cccccc';
@@ -356,8 +364,8 @@
   }
   function normalizedRisk(p){
     if(p.combined_risk_index!=null) return Number(p.combined_risk_index);
+    if(p.bilesik_risk_skoru!=null) return Number(p.bilesik_risk_skoru);
     if(p.risk_score!=null) return Number(p.risk_score);
-    if(p.bilesik_risk_skoru!=null){ const v=Number(p.bilesik_risk_skoru); return v>1?v:(v*100); }
     return null;
   }
   const num = v => (v==null?NaN:Number(v));
@@ -448,7 +456,7 @@
   function updateChoropleth(){
     choroVar=document.getElementById('choroVar').value;
     const labels={
-      risk_class_5:'Risk Sınıfı', risk_score:'Risk Skoru', combined_risk_index:'Combined Risk Index',
+      risk_class_5:'Risk Sınıfı', bilesik_risk_skoru:'Risk Skoru', combined_risk_index:'Combined Risk Index',
       vs30_mean:'VS30 Ortalama', pga_scenario_mw75:'PGA (Mw7.5)',
       toplam_nufus:'Nüfus', toplam_bina:'Bina'
     };
@@ -458,13 +466,26 @@
 
   function renderLegend(){
     const wrap=document.getElementById('legend'); wrap.innerHTML='';
-    console.log('Current choroVar:', choroVar); // Debug
     if(choroVar==='risk_class_5'){
       for(let i=1;i<=5;i++){
         const row=document.createElement('div'); row.className='legend-item';
         row.innerHTML=`<div class="legend-swatch" style="background:${riskColors[i]}"></div><div>Sınıf ${i} – ${riskLabels[i]}</div>`;
         wrap.appendChild(row);
       }
+    }else if(choroVar==='bilesik_risk_skoru'){
+      // Risk skoru için 5'li sınıflandırma
+      const riskScoreRanges = [
+        {min: 0, max: 0.2, label: 'Çok Düşük (0-0.2)', color: '#2ECC71'},
+        {min: 0.2, max: 0.4, label: 'Düşük (0.2-0.4)', color: '#A3D977'},
+        {min: 0.4, max: 0.6, label: 'Orta (0.4-0.6)', color: '#F1C40F'},
+        {min: 0.6, max: 0.8, label: 'Yüksek (0.6-0.8)', color: '#E67E22'},
+        {min: 0.8, max: 1.0, label: 'Çok Yüksek (0.8-1.0)', color: '#E74C3C'}
+      ];
+      riskScoreRanges.forEach(range => {
+        const row = document.createElement('div'); row.className='legend-item';
+        row.innerHTML=`<div class="legend-swatch" style="background:${range.color}"></div><div>${range.label}</div>`;
+        wrap.appendChild(row);
+      });
     }else if(choroVar==='vs30_mean'){
       // VS30 için 5'li sınıflandırma (m/s)
       const vs30Ranges = [
