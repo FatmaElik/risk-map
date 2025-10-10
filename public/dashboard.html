@@ -278,20 +278,53 @@
       // Debug: log the risk class for troubleshooting
       if(!rc) console.log('No risk class for:', p.mahalle_adi || p.Name, 'Props:', Object.keys(p).filter(k => k.includes('risk')));
       return riskColors[rc]||'#cccccc';
-    }
-    // ardışık renkler (sequential)
-    const vals = [];
-    ['istanbul','ankara'].forEach(k=>{
-      (cityData[k].gj.features||[]).forEach(ft=>{
-        const v = num(ft.properties[choroVar]); if(Number.isFinite(v)) vals.push(v);
+    }else if(choroVar==='vs30_mean'){
+      const v = num(p[choroVar]);
+      if(!Number.isFinite(v)) return '#cccccc';
+      if(v <= 300) return '#E74C3C';      // Çok Zayıf
+      if(v <= 400) return '#E67E22';      // Zayıf  
+      if(v <= 500) return '#F1C40F';      // Orta
+      if(v <= 600) return '#A3D977';      // İyi
+      return '#2ECC71';                   // Çok İyi (600+)
+    }else if(choroVar==='pga_scenario_mw75'){
+      const v = num(p[choroVar]);
+      if(!Number.isFinite(v)) return '#cccccc';
+      if(v <= 0.002) return '#2ECC71';    // Çok Düşük
+      if(v <= 0.004) return '#A3D977';    // Düşük
+      if(v <= 0.006) return '#F1C40F';    // Orta
+      if(v <= 0.008) return '#E67E22';    // Yüksek
+      return '#E74C3C';                   // Çok Yüksek (0.008+)
+    }else if(choroVar==='toplam_nufus'){
+      const v = num(p[choroVar]);
+      if(!Number.isFinite(v)) return '#cccccc';
+      if(v <= 5000) return '#2ECC71';     // Çok Az
+      if(v <= 15000) return '#A3D977';    // Az
+      if(v <= 30000) return '#F1C40F';    // Orta
+      if(v <= 50000) return '#E67E22';    // Yüksek
+      return '#E74C3C';                   // Çok Yüksek (50K+)
+    }else if(choroVar==='toplam_bina'){
+      const v = num(p[choroVar]);
+      if(!Number.isFinite(v)) return '#cccccc';
+      if(v <= 500) return '#2ECC71';      // Çok Az
+      if(v <= 1000) return '#A3D977';     // Az
+      if(v <= 2000) return '#F1C40F';     // Orta
+      if(v <= 3000) return '#E67E22';     // Yüksek
+      return '#E74C3C';                   // Çok Yüksek (3K+)
+    }else{
+      // Diğer değişkenler için ardışık renkler (sequential)
+      const vals = [];
+      ['istanbul','ankara'].forEach(k=>{
+        (cityData[k].gj.features||[]).forEach(ft=>{
+          const v = num(ft.properties[choroVar]); if(Number.isFinite(v)) vals.push(v);
+        });
       });
-    });
-    if(!vals.length) return '#cccccc';
-    const v = num(p[choroVar]); if(!Number.isFinite(v)) return '#cccccc';
-    const min=Math.min(...vals), max=Math.max(...vals), t=(v-min)/((max-min)||1);
-    const palette=['#f0f9ff','#bae6fd','#7dd3fc','#38bdf8','#0ea5e9','#0284c7'];
-    const i=Math.max(0,Math.min(palette.length-1, Math.floor(t*(palette.length-1))));
-    return palette[i];
+      if(!vals.length) return '#cccccc';
+      const v = num(p[choroVar]); if(!Number.isFinite(v)) return '#cccccc';
+      const min=Math.min(...vals), max=Math.max(...vals), t=(v-min)/((max-min)||1);
+      const palette=['#f0f9ff','#bae6fd','#7dd3fc','#38bdf8','#0ea5e9','#0284c7'];
+      const i=Math.max(0,Math.min(palette.length-1, Math.floor(t*(palette.length-1))));
+      return palette[i];
+    }
   }
 
   function popup(f, latlng){
@@ -431,7 +464,64 @@
         row.innerHTML=`<div class="legend-swatch" style="background:${riskColors[i]}"></div><div>Sınıf ${i} – ${riskLabels[i]}</div>`;
         wrap.appendChild(row);
       }
+    }else if(choroVar==='vs30_mean'){
+      // VS30 için 5'li sınıflandırma (m/s)
+      const vs30Ranges = [
+        {min: 0, max: 300, label: 'Çok Zayıf (0-300)', color: '#E74C3C'},
+        {min: 300, max: 400, label: 'Zayıf (300-400)', color: '#E67E22'},
+        {min: 400, max: 500, label: 'Orta (400-500)', color: '#F1C40F'},
+        {min: 500, max: 600, label: 'İyi (500-600)', color: '#A3D977'},
+        {min: 600, max: 1000, label: 'Çok İyi (600+)', color: '#2ECC71'}
+      ];
+      vs30Ranges.forEach(range => {
+        const row = document.createElement('div'); row.className='legend-item';
+        row.innerHTML=`<div class="legend-swatch" style="background:${range.color}"></div><div>${range.label}</div>`;
+        wrap.appendChild(row);
+      });
+    }else if(choroVar==='pga_scenario_mw75'){
+      // PGA için 5'li sınıflandırma (g)
+      const pgaRanges = [
+        {min: 0, max: 0.002, label: 'Çok Düşük (0-0.002)', color: '#2ECC71'},
+        {min: 0.002, max: 0.004, label: 'Düşük (0.002-0.004)', color: '#A3D977'},
+        {min: 0.004, max: 0.006, label: 'Orta (0.004-0.006)', color: '#F1C40F'},
+        {min: 0.006, max: 0.008, label: 'Yüksek (0.006-0.008)', color: '#E67E22'},
+        {min: 0.008, max: 0.02, label: 'Çok Yüksek (0.008+)', color: '#E74C3C'}
+      ];
+      pgaRanges.forEach(range => {
+        const row = document.createElement('div'); row.className='legend-item';
+        row.innerHTML=`<div class="legend-swatch" style="background:${range.color}"></div><div>${range.label}</div>`;
+        wrap.appendChild(row);
+      });
+    }else if(choroVar==='toplam_nufus'){
+      // Nüfus için 5'li sınıflandırma
+      const popRanges = [
+        {min: 0, max: 5000, label: 'Çok Az (0-5K)', color: '#2ECC71'},
+        {min: 5000, max: 15000, label: 'Az (5K-15K)', color: '#A3D977'},
+        {min: 15000, max: 30000, label: 'Orta (15K-30K)', color: '#F1C40F'},
+        {min: 30000, max: 50000, label: 'Yüksek (30K-50K)', color: '#E67E22'},
+        {min: 50000, max: 200000, label: 'Çok Yüksek (50K+)', color: '#E74C3C'}
+      ];
+      popRanges.forEach(range => {
+        const row = document.createElement('div'); row.className='legend-item';
+        row.innerHTML=`<div class="legend-swatch" style="background:${range.color}"></div><div>${range.label}</div>`;
+        wrap.appendChild(row);
+      });
+    }else if(choroVar==='toplam_bina'){
+      // Bina sayısı için 5'li sınıflandırma
+      const buildingRanges = [
+        {min: 0, max: 500, label: 'Çok Az (0-500)', color: '#2ECC71'},
+        {min: 500, max: 1000, label: 'Az (500-1K)', color: '#A3D977'},
+        {min: 1000, max: 2000, label: 'Orta (1K-2K)', color: '#F1C40F'},
+        {min: 2000, max: 3000, label: 'Yüksek (2K-3K)', color: '#E67E22'},
+        {min: 3000, max: 10000, label: 'Çok Yüksek (3K+)', color: '#E74C3C'}
+      ];
+      buildingRanges.forEach(range => {
+        const row = document.createElement('div'); row.className='legend-item';
+        row.innerHTML=`<div class="legend-swatch" style="background:${range.color}"></div><div>${range.label}</div>`;
+        wrap.appendChild(row);
+      });
     }else{
+      // Diğer değişkenler için basit düşük-yüksek
       const row=document.createElement('div'); row.className='legend-item';
       row.innerHTML=`<div class="legend-swatch" style="background:#f0f9ff"></div><div> düşük</div>`;
       wrap.appendChild(row);
@@ -456,6 +546,12 @@
     document.getElementById('statTotal').textContent=total;
     document.getElementById('statAvg').textContent= cnt? (sum/cnt).toFixed(2) : '0';
     document.getElementById('statHigh').textContent=high;
+
+    // Update chart titles based on selected city
+    const cityName = city === 'istanbul' ? 'İstanbul' : city === 'ankara' ? 'Ankara' : 'Tüm Şehirler';
+    if(scatterChart) scatterChart.options.plugins.title.text = `Scatter Plot - ${cityName}`;
+    if(corrChart) corrChart.options.plugins.title.text = `Korelasyon Analizi - ${cityName}`;
+    if(distChart) distChart.options.plugins.title.text = `Dağılım Analizi - ${cityName}`;
   }
 
   // -------- TABS + CHARTS
@@ -506,7 +602,9 @@
     const xk = document.getElementById('sx').value;
     const yk = document.getElementById('sy').value;
     const ck = document.getElementById('sc').value;
-    const feats = collectFeats();
+    
+    // Only use features from selected city
+    const feats = cityData[city]?.gj?.features || [];
 
     const pts = feats.map(f=>{
       const p=f.properties||{};
@@ -530,7 +628,8 @@
   }
 
   function updateCorr(){
-    const feats = collectFeats();
+    // Only use features from selected city
+    const feats = cityData[city]?.gj?.features || [];
     const risk = feats.map(f=>normalizedRisk(f.properties||{})).filter(v=>v!=null);
     const vars = [
       {k:'toplam_nufus', n:'Nüfus'},
@@ -558,7 +657,8 @@
 
   function updateDist(){
     const key = document.getElementById('dv').value;
-    const feats = collectFeats();
+    // Only use features from selected city
+    const feats = cityData[city]?.gj?.features || [];
     let labels=[], data=[];
     if(key==='risk_class_5'){
       const c=[0,0,0,0,0];
