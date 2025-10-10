@@ -77,7 +77,7 @@
       </div>
 
       <div class="sec">
-        <h3><i class="fa-solid fa-magnifying-glass"></i> <span id="cityLabel">İstanbul</span> Mahallesi</h3>
+        <h3><i class="fa-solid fa-magnifying-glass"></i> <span id="cityLabel">İstanbul</span> Mahalleleri</h3>
         <select id="mahSelect" class="select" onchange="selectMahalle()">
           <option value="">-- Mahalle Seçiniz --</option>
         </select>
@@ -334,8 +334,18 @@
     city=k;
     document.getElementById('btnCityIST').classList.toggle('active',k==='istanbul');
     document.getElementById('btnCityANK').classList.toggle('active',k==='ankara');
-    document.getElementById('cityLabel').textContent=k==='istanbul'?'İstanbul':'Ankara';
-    buildMahList();
+    
+    // Only rebuild mahalle list if data is loaded for this city
+    if (cityData[k]?.loaded) {
+      buildMahList();
+    } else {
+      document.getElementById('mahSelect').innerHTML='<option value="">-- Veri yükleniyor... --</option>';
+    }
+    
+    // Also update the map view to show only selected city
+    if (view === 'all') {
+      switchView(k); // Switch to show only selected city
+    }
   }
   function switchView(v){
     view=v;
@@ -345,14 +355,39 @@
     draw(); updateStats(); renderLegend();
   }
   function buildMahList(){
-    const list = (cityData[city].gj.features||[]).map(f=>{
-      const p=f.properties||{}; return {name:p.mahalle_adi||p.Name||p.name||'Mahalle', ilce:p.ilce_adi||p.district||'', f};
+    // Only show neighborhoods for the selected city
+    const gj = cityData[city]?.gj;
+    if (!gj || !gj.features) {
+      document.getElementById('mahSelect').innerHTML='<option value="">-- Veri yüklenmedi --</option>';
+      return;
+    }
+    
+    const list = gj.features.map(f=>{
+      const p=f.properties||{}; 
+      return {
+        name: p.mahalle_adi||p.Name||p.name||'Mahalle', 
+        ilce: p.ilce_adi||p.district||'—', 
+        f
+      };
     }).sort((a,b)=>a.name.localeCompare(b.name,'tr'));
-    const sel=document.getElementById('mahSelect'); sel.innerHTML='<option value="">-- Mahalle Seçiniz --</option>';
-    list.forEach((m,i)=>{ const o=document.createElement('option'); o.value=i; o.textContent=`${m.name} (${m.ilce})`; sel.appendChild(o); });
+    
+    const sel=document.getElementById('mahSelect'); 
+    sel.innerHTML='<option value="">-- Mahalle Seçiniz --</option>';
+    
+    list.forEach((m,i)=>{ 
+      const o=document.createElement('option'); 
+      o.value=i; 
+      o.textContent=`${m.name} (${m.ilce})`; 
+      sel.appendChild(o); 
+    });
+    
     sel.dataset.count = list.length;
     sel.dataset.city = city;
     sel._data = list;
+    
+    // Update city label
+    const cityLabel = city === 'istanbul' ? 'İstanbul' : 'Ankara';
+    document.getElementById('cityLabel').textContent = cityLabel;
   }
   function selectMahalle(){
     const sel=document.getElementById('mahSelect');
