@@ -89,6 +89,7 @@
         <select id="choroVar" class="select" onchange="updateChoropleth()">
           <option value="risk_class_5">Risk Sınıfı (1–5)</option>
           <option value="risk_score">Risk Skoru</option>
+          <option value="combined_risk_index">Combined Risk Index</option>
           <option value="vs30_mean">VS30 Ortalama</option>
           <option value="pga_scenario_mw75">PGA (Mw7.5)</option>
           <option value="toplam_nufus">Toplam Nüfus</option>
@@ -274,6 +275,8 @@
     const p=f.properties||{};
     if(choroVar==='risk_class_5'){
       const rc = getRiskClass(p);
+      // Debug: log the risk class for troubleshooting
+      if(!rc) console.log('No risk class for:', p.mahalle_adi || p.Name, 'Props:', Object.keys(p).filter(k => k.includes('risk')));
       return riskColors[rc]||'#cccccc';
     }
     // ardışık renkler (sequential)
@@ -314,7 +317,9 @@
   }
 
   function getRiskClass(p){
-    return Number(p.risk_class_5 ?? p.risk_label_5li ?? p.risk_label_normalized ?? 0) || 0;
+    // Try different property names for risk classification
+    const riskClass = p.risk_class_5 ?? p.risk_label_5li ?? p.risk_label_normalized ?? p.risk_class ?? 0;
+    return Number(riskClass) || 0;
   }
   function normalizedRisk(p){
     if(p.combined_risk_index!=null) return Number(p.combined_risk_index);
