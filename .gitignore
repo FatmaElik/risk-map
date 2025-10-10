@@ -29,3 +29,15 @@ dist-ssr
 .env.production.local
 .env.development.local
 .env.test.local
+
+# Shapefile and temporary data files
+*.shp
+*.dbf
+*.prj
+*.cpg
+*.shx
+*.qmd
+*_backup.geojson
+*dummy*.csv
+*il_poligonu*
+*ilce_siniri*
