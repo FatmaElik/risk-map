@@ -353,6 +353,16 @@
     document.getElementById('viewIst').classList.toggle('active',v==='istanbul');
     document.getElementById('viewAnk').classList.toggle('active',v==='ankara');
     draw(); updateStats(); renderLegend();
+    
+    // Update city selection to match view
+    if (v === 'istanbul' || v === 'ankara') {
+      city = v;
+      document.getElementById('btnCityIST').classList.toggle('active',v==='istanbul');
+      document.getElementById('btnCityANK').classList.toggle('active',v==='ankara');
+      if (cityData[v]?.loaded) {
+        buildMahList();
+      }
+    }
   }
   function buildMahList(){
     // Only show neighborhoods for the selected city
@@ -405,12 +415,12 @@
   function updateChoropleth(){
     choroVar=document.getElementById('choroVar').value;
     const labels={
-      risk_class_5:'Risk Sınıfı', risk_score:'Risk Skoru',
+      risk_class_5:'Risk Sınıfı', risk_score:'Risk Skoru', combined_risk_index:'Combined Risk Index',
       vs30_mean:'VS30 Ortalama', pga_scenario_mw75:'PGA (Mw7.5)',
       toplam_nufus:'Nüfus', toplam_bina:'Bina'
     };
     document.getElementById('varNote').textContent='Seçili: '+(labels[choroVar]||choroVar);
-    draw(); renderLegend();
+    draw(); renderLegend(); updateStats();
   }
 
   function renderLegend(){
