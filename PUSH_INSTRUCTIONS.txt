@@ -1,0 +1,97 @@
+===============================================
+INSTRUCTIONS TO PUSH & DEPLOY
+===============================================
+
+Your new dashboard is ready! Follow these steps:
+
+STEP 1: PUSH TO GITHUB
+-----------------------
+
+Choose ONE of these methods:
+
+A) If you have GitHub credentials set up:
+   git push origin main
+
+B) If you need to authenticate:
+   # Generate a token at: https://github.com/settings/tokens
+   # Then run:
+   git push https://YOUR_TOKEN@github.com/FatmaElik/risk-map.git main
+
+C) Using GitHub Desktop:
+   - Open GitHub Desktop
+   - It should show your commits (20209f1, 9c57525)
+   - Click "Push origin"
+
+
+STEP 2: VERCEL AUTO-DEPLOYS
+----------------------------
+
+If your Vercel project is connected to GitHub:
+- Vercel will automatically detect the push
+- It will build and deploy within 1-2 minutes
+- Check: https://vercel.com/dashboard
+
+
+STEP 3: ALTERNATIVE - DEPLOY MANUALLY
+--------------------------------------
+
+If auto-deploy doesn't work:
+
+1. Go to https://vercel.com/dashboard
+2. Find your project (risk-map)
+3. Click "..." menu → "Redeploy"
+4. Select latest commit (9c57525)
+5. Click "Redeploy"
+
+
+STEP 4: VERIFY DEPLOYMENT
+--------------------------
+
+Once deployed, test:
+✓ Dashboard loads at https://YOUR_URL/
+✓ Istanbul map shows neighborhoods
+✓ Can switch to Ankara
+✓ Variables change colors
+✓ Click neighborhood shows popup
+✓ CSV export downloads
+
+
+WHAT'S NEW IN THIS DEPLOYMENT
+------------------------------
+
+✓ React + TypeScript dashboard (replaced old HTML)
+✓ Multi-city support (Istanbul & Ankara)
+✓ 5-class classification (Jenks Natural Breaks)
+✓ Interactive map with highlights
+✓ Dynamic legends
+✓ CSV export with class labels
+✓ Professional UI with controls
+
+
+YOUR COMMITS
+------------
+
+9c57525 - fix: Update vercel.json for React SPA routing
+20209f1 - feat: Multi-city choropleth dashboard
+
+
+TROUBLESHOOTING
+---------------
+
+If push fails with authentication error:
+1. Try GitHub Desktop instead
+2. Or set up SSH key
+3. Or use Personal Access Token
+
+If deployment fails:
+1. Check Vercel build logs
+2. Verify: npm run build (should work locally)
+3. Contact: support@vercel.com
+
+
+NEED HELP?
+----------
+
+Check DEPLOYMENT_GUIDE.md for detailed instructions.
+
+===============================================
