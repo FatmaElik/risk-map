@@ -1,316 +1,234 @@
-import { useEffect, useRef, useState } from "react";
-import maplibregl from "maplibre-gl";
-import "maplibre-gl/dist/maplibre-gl.css";
+import { useEffect } from 'react';
+import useAppStore from './state/useAppStore';
+import { loadGeoJSONs, loadCSV, joinCsvToGeojson } from './data/loadData';
+import MapView from './components/MapView';
+import BasemapToggle from './components/BasemapToggle';
+import YearSelect from './components/YearSelect';
+import MetricLegend from './components/MetricLegend';
+import CityDistrictControls from './components/CityDistrictControls';
+import ScatterPanel from './components/ScatterPanel';
+import './App.css';
 
-/* ---------------- yardımcılar ---------------- */
-const getP = (p, keys, fb = null) => {
-  for (const k of keys) if (p && p[k] !== undefined && p[k] !== null) return p[k];
-  return fb;
-};
-
-const qtiles = (arr) => {
-  const a = arr.filter(Number.isFinite).sort((x, y) => x - y);
-  if (!a.length) return { min: 0, q25: 0.25, med: 0.5, q75: 0.75, max: 1 };
-  const at = (p) => a[Math.floor((a.length - 1) * p)];
-  return { min: a[0], q25: at(0.25), med: at(0.5), q75: at(0.75), max: a[a.length - 1] };
-};
-
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-
-/** fetch + timeout + toleranslı okuma */
-async function loadGeoJSONs(urls, timeoutMs = 12000) {
-  const timed = Promise.race([
-    Promise.allSettled(
-      urls.map((u) =>
-        fetch(u).then((r) => (r.ok ? r.json() : Promise.reject(new Error(r.statusText))))
-      )
-    ),
-    (async () => {
-      await sleep(timeoutMs);
-      return "TIMEOUT";
-    })(),
-  ]);
-
-  const res = await timed;
-  if (res === "TIMEOUT") return [];
-
-  return res
-    .filter((x) => x.status === "fulfilled")
-    .map((x) => x.value)
-    .filter(Boolean);
-}
-/* ------------------------------------------------ */
-
+/**
+ * Main application component
+ * Orchestrates data loading and component composition
+ */
 export default function App() {
-  const mapRef = useRef(null);
-  const mapDivRef = useRef(null);
-  const popupRef = useRef(null);
-
-  const [mode, setMode] = useState("risk"); // "risk" | "vs30"
-  const stopsRef = useRef({ risk: null, vs30: null });
-
-  /** Katmanı seçilen moda göre renklendir */
-  const applyChoropleth = (m) => {
-    const map = mapRef.current;
-    if (!map || !map.getLayer("mah-fill")) return;
-
-    if (m === "risk") {
-      const s = stopsRef.current.risk;
-      map.setPaintProperty("mah-fill", "fill-color", [
-        "case",
-        // hiç risk değeri yoksa gri
-        [
-          "!",
-          [
-            "to-boolean",
-            [
-              "coalesce",
-              ["to-number", ["get", "combined_risk_index"]],
-              ["to-number", ["get", "risk_score"]],
-              ["to-number", ["get", "bilesik_risk_skoru"]],
-              null,
-            ],
-          ],
-        ],
-        "#BBBBBB",
-        // varsa (0–1 / 0–100 normalize edilerek) quantile ile boya
-        [
-          "interpolate",
-          ["linear"],
-          [
-            "let",
-            "r",
-            [
-              "coalesce",
-              ["to-number", ["get", "combined_risk_index"]],
-              ["to-number", ["get", "risk_score"]],
-              ["*", ["to-number", ["get", "bilesik_risk_skoru"]], 100],
-            ],
-            ["case", [">", ["var", "r"], 1], ["var", "r"], ["*", ["var", "r"], 100]],
-          ],
-          s.min,
-          "#2ECC71",
-          s.q25,
-          "#A3D977",
-          s.med,
-          "#F1C40F",
-          s.q75,
-          "#E67E22",
-          s.max,
-          "#E74C3C",
-        ],
-      ]);
-    } else {
-      // VS30 için hem vs30 hem vs30_mean destekle
-      const s = stopsRef.current.vs30;
-      map.setPaintProperty("mah-fill", "fill-color", [
-        "case",
-        [
-          "!",
-          [
-            "to-boolean",
-            [
-              "coalesce",
-              ["to-number", ["get", "vs30"]],
-              ["to-number", ["get", "vs30_mean"]],
-              null,
-            ],
-          ],
-        ],
-        "#BBBBBB",
-        [
-          "interpolate",
-          ["linear"],
-          ["coalesce", ["to-number", ["get", "vs30"]], ["to-number", ["get", "vs30_mean"]]],
-          // düşük vs30 = zayıf zemin (kırmızı) → yüksek vs30 = sağlam (yeşil)
-          s.min,
-          "#E74C3C",
-          s.q25,
-          "#E67E22",
-          s.med,
-          "#F1C40F",
-          s.q75,
-          "#A3D977",
-          s.max,
-          "#2ECC71",
-        ],
-      ]);
-    }
-  };
-
+  const {
+    selectedYear,
+    setGeojsonData,
+    setCsvData,
+    setIsLoadingData,
+    setAvailableDistricts,
+    metric,
+    setMetric,
+    geojsonData,
+  } = useAppStore();
+  
+  // Welcome message
   useEffect(() => {
-    const styleUrl =
-      import.meta.env.VITE_MAP_STYLE ||
-      `https://api.maptiler.com/maps/streets/style.json?key=${import.meta.env.VITE_MAPTILER_KEY}`;
-
-    const map = new maplibregl.Map({
-      container: mapDivRef.current,
-      style: styleUrl,
-      center: [32.5, 40.8],
-      zoom: 6,
-    });
-    mapRef.current = map;
-
-    map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
-    popupRef.current = new maplibregl.Popup({ closeButton: true, closeOnClick: true });
-
-    map.on("load", async () => {
-      // verileri paralel ve toleranslı yükle
-      const parts = await loadGeoJSONs([
-        "/data/istanbul_mahalle_risk.geojson",
-        "/data/ankara_mahalle_risk.geojson",
-      ]);
-      if (!parts.length) return;
-
-      const all = {
-        type: "FeatureCollection",
-        features: parts.flatMap((fc) => fc.features || []),
-      };
-
-      // eşikler: risk + VS30 (vs30_mean fallback)
-      const riskVals = all.features.map((f) => {
-        const p = f.properties || {};
-        const raw = getP(p, ["combined_risk_index", "risk_score"], null);
-        const tr = getP(p, ["bilesik_risk_skoru"], null);
-        if (raw !== null) return Number(raw);
-        if (tr !== null) return Number(tr) > 1 ? Number(tr) : Number(tr) * 100;
-        return NaN;
-      });
-
-      const vs30Vals = all.features.map((f) =>
-        Number(getP(f.properties, ["vs30", "vs30_mean"], NaN))
-      );
-
-      stopsRef.current = { risk: qtiles(riskVals), vs30: qtiles(vs30Vals) };
-
-      // kaynak + katmanlar
-      map.addSource("mah", { type: "geojson", data: all });
-      map.addLayer({
-        id: "mah-fill",
-        type: "fill",
-        source: "mah",
-        paint: { "fill-color": "#CCCCCC", "fill-opacity": 0.55 },
-      });
-      map.addLayer({
-        id: "mah-line",
-        type: "line",
-        source: "mah",
-        paint: { "line-color": "#333", "line-width": 0.6 },
-      });
-
-      // ilk boyama
-      applyChoropleth(mode);
-
-      // fit bounds (Doğru sıra: [minX,minY] - [maxX,maxY])
-      const coords = [];
-      for (const f of all.features) {
-        const g = f.geometry;
-        if (!g) continue;
-        if (g.type === "Polygon") coords.push(...g.coordinates.flat(1));
-        else if (g.type === "MultiPolygon") coords.push(...g.coordinates.flat(2));
-      }
-      if (coords.length) {
-        const xs = coords.map((c) => c[0]);
-        const ys = coords.map((c) => c[1]);
-        map.fitBounds(
-          [
-            [Math.min(...xs), Math.min(...ys)],
-            [Math.max(...xs), Math.max(...ys)],
-          ],
-          { padding: 24, duration: 600 }
-        );
-      }
-
-      // tıklama → popup
-      map.on("click", "mah-fill", (e) => {
-        const f = e.features?.[0];
-        if (!f) return;
-        const p = f.properties || {};
-
-        const name = getP(p, ["clean_name", "mahalle_adi", "Name", "name"], "Mahalle");
-        const ilce = getP(p, ["ilce_adi", "district", "ilce"], "—");
-
-        let risk = getP(p, ["combined_risk_index", "risk_score"], null);
-        if (risk === null) {
-          const tr = getP(p, ["bilesik_risk_skoru"], null);
-          if (tr !== null) risk = Number(tr) > 1 ? Number(tr) : Number(tr) * 100;
+    console.log('%c🗺️ Risk Map Application', 'font-size: 20px; font-weight: bold; color: #3B82F6;');
+    console.log('MapTiler Key:', import.meta.env.VITE_MAPTILER_KEY ? '✅ Set' : '❌ Missing');
+  }, []);
+  
+  // Load data when year changes
+  useEffect(() => {
+    let isCancelled = false;
+    
+    async function loadData() {
+      console.log('🔄 Loading data for year:', selectedYear);
+      setIsLoadingData(true);
+      
+      try {
+        // Load GeoJSON boundaries (same for all years)
+        const geojsonPaths = [
+          '/data/boundaries/ankara_neighborhoods.geojson',
+          '/data/boundaries/istanbul_neighborhoods.geojson',
+        ];
+        
+        // If boundaries don't exist, fall back to old paths
+        const fallbackPaths = [
+          '/data/ankara_mahalle_risk.geojson',
+          '/data/istanbul_mahalle_risk.geojson',
+        ];
+        
+        let geojson = await loadGeoJSONs(geojsonPaths);
+        
+        // Try fallback if new paths don't work
+        if (!geojson || geojson.features.length === 0) {
+          geojson = await loadGeoJSONs(fallbackPaths);
         }
-        const label = getP(
-          p,
-          ["risk_label_5li", "risk_label_normalized", "risk_label", "label"],
-          null
+        
+        // Load CSV data for selected year
+        const csvPath = `/data/risk/${selectedYear}.csv`;
+        const csv = await loadCSV(csvPath);
+        
+        if (isCancelled) return;
+        
+        // Join CSV data with GeoJSON
+        const joined = joinCsvToGeojson(geojson, csv);
+        
+        // Extract unique districts for filter
+        const districts = new Map();
+        joined?.features?.forEach(feature => {
+          const district = feature.properties?.ilce_adi;
+          const city = feature.properties?.city;
+          if (district && city) {
+            districts.set(district, { name: district, city });
+          }
+        });
+        
+        const sortedDistricts = Array.from(districts.values()).sort((a, b) => 
+          a.name.localeCompare(b.name, 'tr')
         );
-        const vs30 = getP(p, ["vs30", "vs30_mean"], null);
-
-        const html = `
-          <div style="font:12px/1.4 system-ui,sans-serif;">
-            <div style="font-weight:700;margin-bottom:4px">${name}</div>
-            <div>İlçe: <b>${ilce}</b></div>
-            <div>Risk: <b>${risk !== null ? Number(risk).toFixed(2) : "-"}</b>${
-          label !== null ? ` <span style="opacity:.8">(label: ${label})</span>` : ""
-        }</div>
-            <div>VS30: <b>${vs30 !== null ? Number(vs30).toFixed(0) : "-"}</b> m/s</div>
-          </div>`;
-        popupRef.current.setLngLat(e.lngLat).setHTML(html).addTo(map);
-      });
-
-      map.on("mouseenter", "mah-fill", () => (map.getCanvas().style.cursor = "pointer"));
-      map.on("mouseleave", "mah-fill", () => (map.getCanvas().style.cursor = ""));
-    });
+        
+        setGeojsonData(joined);
+        setCsvData(csv);
+        setAvailableDistricts(sortedDistricts);
+        
+        console.log('✅ Data loaded successfully:', {
+          features: joined?.features?.length || 0,
+          csvRows: csv?.length || 0,
+          districts: sortedDistricts.length,
+        });
+      } catch (error) {
+        console.error('❌ Error loading data:', error);
+      } finally {
+        setIsLoadingData(false);
+      }
+    }
+    
+    loadData();
 
     return () => {
-      popupRef.current?.remove();
-      map.remove();
+      isCancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [selectedYear, setGeojsonData, setCsvData, setIsLoadingData, setAvailableDistricts]);
 
-  // mod değişince yeniden boya
-  useEffect(() => {
-    applyChoropleth(mode);
-  }, [mode]);
+  const metrics = ['risk_score', 'vs30_mean', 'population', 'building_count'];
 
   return (
-    <>
-      {/* Mod seçici */}
+    <div style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden' }}>
+      {/* Map View */}
+      <MapView />
+      
+      {/* Basemap Toggle (top right) */}
+      <BasemapToggle />
+      
+      {/* Year Selector (below basemap toggle) */}
+      <YearSelect />
+      
+      {/* Metric Selector (below year) */}
       <div
         style={{
-          position: "absolute",
-          zIndex: 2,
-          top: 16,
-          left: 16,
-          background: "rgba(255,255,255,.95)",
-          padding: "8px 10px",
-          borderRadius: 10,
-          boxShadow: "0 2px 8px rgba(0,0,0,.15)",
-          fontFamily: "system-ui, sans-serif",
-          fontSize: 12,
+          position: 'absolute',
+          top: 176,
+          right: 16,
+          zIndex: 10,
+          background: 'rgba(255, 255, 255, 0.95)',
+          backdropFilter: 'blur(4px)',
+          borderRadius: 12,
+          padding: '10px 14px',
+          boxShadow: '0 2px 12px rgba(0, 0, 0, 0.15)',
+          fontFamily: 'system-ui, -apple-system, sans-serif',
+          fontSize: 13,
         }}
       >
-        <div style={{ fontWeight: 700, marginBottom: 6 }}>Görselleştirme</div>
-        <label style={{ display: "flex", gap: 6, alignItems: "center", marginBottom: 4 }}>
-          <input
-            type="radio"
-            name="mode"
-            value="risk"
-            checked={mode === "risk"}
-            onChange={() => setMode("risk")}
-          />
-          Risk Skoru
-        </label>
-        <label style={{ display: "flex", gap: 6, alignItems: "center" }}>
-          <input
-            type="radio"
-            name="mode"
-            value="vs30"
-            checked={mode === "vs30"}
-            onChange={() => setMode("vs30")}
-          />
-          VS30 (m/s)
-        </label>
+        <div style={{ fontWeight: 600, marginBottom: 8, color: '#374151' }}>
+          Metric
+        </div>
+        <select
+          value={metric}
+          onChange={(e) => setMetric(e.target.value)}
+          style={{
+            width: '100%',
+            padding: '6px 10px',
+            border: '1px solid #D1D5DB',
+            borderRadius: 8,
+          fontSize: 12,
+            fontFamily: 'inherit',
+            cursor: 'pointer',
+            background: 'white',
+          }}
+        >
+          <option value="risk_score">Risk Score</option>
+          <option value="vs30_mean">VS30 (m/s)</option>
+          <option value="population">Population</option>
+          <option value="building_count">Building Count</option>
+        </select>
+      </div>
+      
+      {/* City & District Controls (top left) */}
+      <CityDistrictControls />
+      
+      {/* Legend (bottom right) */}
+      <MetricLegend />
+      
+      {/* Scatter Panel (bottom left) */}
+      <ScatterPanel />
+      
+      {/* Loading Overlay */}
+      <LoadingOverlay />
+    </div>
+  );
+}
+
+/**
+ * Loading overlay component
+ */
+function LoadingOverlay() {
+  const { isLoadingData } = useAppStore();
+  
+  if (!isLoadingData) return null;
+  
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'rgba(255, 255, 255, 0.8)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 9999,
+        pointerEvents: 'none',
+      }}
+    >
+      <div
+        style={{
+          background: 'white',
+          padding: '20px 32px',
+          borderRadius: 12,
+          boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
+          fontFamily: 'system-ui, sans-serif',
+        }}
+      >
+        <div
+          style={{
+            width: 20,
+            height: 20,
+            border: '3px solid #E5E7EB',
+            borderTopColor: '#3B82F6',
+            borderRadius: '50%',
+            animation: 'spin 0.8s linear infinite',
+          }}
+        />
+        <div style={{ fontSize: 14, color: '#374151' }}>
+          Loading data...
+        </div>
       </div>
 
-      <div ref={mapDivRef} style={{ width: "100vw", height: "100vh" }} />
-    </>
+      <style>{`
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      `}</style>
+    </div>
   );
 }
