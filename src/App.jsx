@@ -150,14 +150,22 @@ export default function App() {
       
       {/* Metric Selector (below year) */}
       <div
-        className="absolute top-44 right-4 w-48 p-3 rounded-2xl shadow-lg bg-white/85 backdrop-blur supports-[backdrop-filter]:bg-white/60"
         style={{
+          position: 'absolute',
+          top: 176,
+          right: 16,
+          width: 180,
           zIndex: 10,
+          background: 'rgba(255, 255, 255, 0.95)',
+          backdropFilter: 'blur(4px)',
+          borderRadius: 12,
+          padding: '12px',
+          boxShadow: '0 2px 12px rgba(0, 0, 0, 0.15)',
           fontFamily: 'system-ui, -apple-system, sans-serif',
           fontSize: 13,
         }}
       >
-        <div className="font-semibold mb-2 text-neutral-800">
+        <div style={{ fontWeight: 600, marginBottom: 8, color: '#374151' }}>
           Metric
         </div>
         <MetricSelect />

@@ -276,7 +276,6 @@ export default function ScatterPanel() {
               options={metrics.map(m => ({ label: getMetricLabel(m), value: m }))}
               value={scatterXMetric}
               onChange={setScatterXMetric}
-              className="text-xs"
             />
           </div>
           
@@ -286,7 +285,6 @@ export default function ScatterPanel() {
               options={metrics.map(m => ({ label: getMetricLabel(m), value: m }))}
               value={scatterYMetric}
               onChange={setScatterYMetric}
-              className="text-xs"
             />
           </div>
         </div>

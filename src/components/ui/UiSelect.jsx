@@ -13,9 +13,15 @@ export default function UiSelect({
   ...rest 
 }) {
   return (
-    <div className="relative">
+    <div style={{ position: 'relative' }}>
       {label && (
-        <label className="block text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-1">
+        <label style={{
+          display: 'block',
+          fontSize: '11px',
+          fontWeight: '500',
+          color: '#6B7280',
+          marginBottom: '4px'
+        }}>
           {label}
         </label>
       )}
@@ -23,17 +29,22 @@ export default function UiSelect({
         {...rest}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className={`
-          h-10 w-full rounded-xl pr-10 pl-3
-          appearance-none outline-none
-          bg-neutral-900 text-white
-          border border-neutral-700
-          shadow-sm
-          focus:ring-2 focus:ring-neutral-400/60 focus:border-neutral-400/60
-          disabled:opacity-60 disabled:cursor-not-allowed
-          cursor:pointer
-          ${className}
-        `.trim()}
+        style={{
+          height: '40px',
+          width: '100%',
+          borderRadius: '12px',
+          paddingRight: '40px',
+          paddingLeft: '12px',
+          appearance: 'none',
+          outline: 'none',
+          backgroundColor: '#171717',
+          color: 'white',
+          border: '1px solid #404040',
+          boxShadow: '0 1px 2px rgba(0, 0, 0, 0.05)',
+          cursor: 'pointer',
+          fontSize: '12px',
+          fontFamily: 'inherit'
+        }}
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>
@@ -42,7 +53,16 @@ export default function UiSelect({
         ))}
       </select>
       <ChevronDown
-        className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-300"
+        style={{
+          pointerEvents: 'none',
+          position: 'absolute',
+          right: '12px',
+          top: '50%',
+          transform: 'translateY(-50%)',
+          height: '16px',
+          width: '16px',
+          color: '#D1D5DB'
+        }}
       />
     </div>
   );
