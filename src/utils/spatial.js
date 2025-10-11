@@ -3,6 +3,47 @@
  */
 
 /**
+ * Convert UTM coordinates to WGS84 (longitude/latitude).
+ * @param {number} x - UTM X coordinate.
+ * @param {number} y - UTM Y coordinate.
+ * @param {number} zone - UTM zone (default: 36 for Turkey).
+ * @returns {Array} [longitude, latitude].
+ */
+function utmToWgs84(x, y, zone = 36) {
+  // Simplified UTM to WGS84 conversion for Turkey (Zone 36)
+  const a = 6378137; // WGS84 semi-major axis
+  const f = 1/298.257223563; // WGS84 flattening
+  const k0 = 0.9996; // UTM scale factor
+  const e2 = 2*f - f*f; // First eccentricity squared
+  const e1 = (1 - Math.sqrt(1 - e2)) / (1 + Math.sqrt(1 - e2)); // First eccentricity
+  
+  const N0 = 0; // False northing
+  const E0 = 500000; // False easting
+  const lambda0 = (zone - 1) * 6 - 180 + 3; // Central meridian
+  
+  const N = y - N0;
+  const E = x - E0;
+  
+  const M = N / k0;
+  const mu = M / (a * (1 - e2/4 - 3*e2*e2/64 - 5*e2*e2*e2/256));
+  
+  const phi1 = mu + (3*e1/2 - 27*e1*e1*e1/32) * Math.sin(2*mu) +
+               (21*e1*e1/16 - 55*e1*e1*e1*e1/32) * Math.sin(4*mu) +
+               (151*e1*e1*e1/96) * Math.sin(6*mu);
+  
+  const e1sq = e2 / (1 - e2);
+  const rho1 = a * (1 - e2) / Math.pow(1 - e2 * Math.sin(phi1) * Math.sin(phi1), 3/2);
+  const nu1 = a / Math.sqrt(1 - e2 * Math.sin(phi1) * Math.sin(phi1));
+  
+  const D = E / (nu1 * k0);
+  const lat = phi1 - (nu1 * Math.tan(phi1) / rho1) * (D*D/2 - (5 + 3*Math.tan(phi1)*Math.tan(phi1) + 10*e1sq - 4*e1sq*e1sq - 9*e1sq*Math.tan(phi1)*Math.tan(phi1)) * D*D*D*D/24 + (61 + 90*Math.tan(phi1)*Math.tan(phi1) + 298*e1sq + 45*Math.tan(phi1)*Math.tan(phi1)*Math.tan(phi1)*Math.tan(phi1)) * D*D*D*D*D*D/720);
+  
+  const lon = lambda0 + (D - (1 + 2*Math.tan(phi1)*Math.tan(phi1) + e1sq) * D*D*D/6 + (5 - 2*e1sq + 28*Math.tan(phi1)*Math.tan(phi1) - 3*e1sq*e1sq + 8*e1sq*Math.tan(phi1)*Math.tan(phi1) + 24*Math.tan(phi1)*Math.tan(phi1)*Math.tan(phi1)*Math.tan(phi1)) * D*D*D*D*D/120) / Math.cos(phi1);
+  
+  return [lon * 180 / Math.PI, lat * 180 / Math.PI];
+}
+
+/**
  * Calculate bounding box for a feature or feature collection
  */
 export function getBounds(geojson) {
@@ -28,11 +69,20 @@ export function getBounds(geojson) {
   
   if (coords.length === 0) return null;
   
+  // Check if coordinates are UTM (large numbers) and convert to WGS84
+  const isUtm = coords.some(coord => Math.abs(coord[0]) > 180 || Math.abs(coord[1]) > 90);
+  
+  let wgs84Coords = coords;
+  if (isUtm) {
+    console.log('🔄 Converting UTM coordinates to WGS84...');
+    wgs84Coords = coords.map(coord => utmToWgs84(coord[0], coord[1]));
+  }
+  
   // Use reduce instead of spread to avoid call stack overflow with large datasets
   let minLon = Infinity, maxLon = -Infinity;
   let minLat = Infinity, maxLat = -Infinity;
   
-  coords.forEach(coord => {
+  wgs84Coords.forEach(coord => {
     const [lon, lat] = coord;
     if (lon < minLon) minLon = lon;
     if (lon > maxLon) maxLon = lon;
