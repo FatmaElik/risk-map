@@ -82,16 +82,16 @@ export default function App() {
         const joined = joinCsvToGeojson(geojson, csv);
         
         // Extract unique districts for filter
-        const districts = new Map();
+        const districtsMap = new Map();
         joined?.features?.forEach(feature => {
           const district = feature.properties?.ilce_adi;
           const city = feature.properties?.city;
           if (district && city) {
-            districts.set(district, { name: district, city });
+            districtsMap.set(district, { name: district, city });
           }
         });
         
-        const sortedDistricts = Array.from(districts.values()).sort((a, b) => 
+        const sortedDistricts = Array.from(districtsMap.values()).sort((a, b) => 
           a.name.localeCompare(b.name, 'tr')
         );
         

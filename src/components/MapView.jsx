@@ -108,9 +108,9 @@ export default function MapView() {
         type: 'line',
         source: 'provinces',
         paint: {
-          'line-color': '#FF4444',
-          'line-width': 4,
-          'line-opacity': 0.9,
+          'line-color': '#FF0000',
+          'line-width': 5,
+          'line-opacity': 1.0,
         },
       }); // Add on top
     }
@@ -127,9 +127,9 @@ export default function MapView() {
         type: 'line',
         source: 'districts',
         paint: {
-          'line-color': '#FFB84D',
-          'line-width': 2,
-          'line-opacity': 0.7,
+          'line-color': '#FF8C00',
+          'line-width': 3,
+          'line-opacity': 0.9,
         },
       }); // Add on top, below provinces
     }
@@ -167,14 +167,30 @@ export default function MapView() {
     if (!mapRef.current || !mapLoaded || !provinceBoundaries) return;
     
     const map = mapRef.current;
+    
+    // Filter province features by selected cities
     const cityFeatures = provinceBoundaries.features.filter(f => {
-      const city = f.properties?.city || f.properties?.NAME_1 || '';
-      return selectedCities.some(sc => city.toLowerCase().includes(sc.toLowerCase()));
+      const cityName = f.properties?.city || f.properties?.NAME_1 || f.properties?.IL_ADI || '';
+      const cityLower = cityName.toLowerCase();
+      
+      return selectedCities.some(sc => {
+        const scLower = sc.toLowerCase();
+        return cityLower.includes(scLower) || scLower.includes(cityLower) ||
+               (scLower === 'istanbul' && (cityLower.includes('istanbul') || cityLower.includes('constantinople'))) ||
+               (scLower === 'ankara' && cityLower.includes('ankara'));
+      });
+    });
+    
+    console.log('🔍 Zoom debug:', {
+      selectedCities,
+      cityFeatures: cityFeatures.length,
+      sampleFeature: provinceBoundaries.features[0]?.properties
     });
     
     if (cityFeatures.length > 0) {
       const cityBounds = getBounds({ type: 'FeatureCollection', features: cityFeatures });
       if (cityBounds) {
+        console.log('📍 Fitting bounds:', cityBounds);
         map.fitBounds(cityBounds, { padding: 80, duration: 1000 });
       }
     }
