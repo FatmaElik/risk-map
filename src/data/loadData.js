@@ -1,5 +1,7 @@
 import Papa from 'papaparse';
 import { normalizeProperties, getCityFromPath } from './fieldMap';
+import { dataUrl } from './path';
+import { makeKey } from './normalize';
 
 // Cache for loaded data
 const cache = {
@@ -17,6 +19,18 @@ function showToast(message, type = 'info') {
 }
 
 /**
+ * Safe fetch with better error messages
+ */
+async function safeFetch(path) {
+  const url = dataUrl(path);
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status} for ${url}`);
+  }
+  return response;
+}
+
+/**
  * Load GeoJSON with graceful error handling
  */
 export async function loadGeoJSON(path) {
@@ -25,11 +39,7 @@ export async function loadGeoJSON(path) {
   }
   
   try {
-    const response = await fetch(path);
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-    
+    const response = await safeFetch(path);
     const data = await response.json();
     
     // Normalize properties and add city if missing
@@ -78,11 +88,7 @@ export async function loadCSV(path) {
   }
   
   try {
-    const response = await fetch(path);
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-    
+    const response = await safeFetch(path);
     const text = await response.text();
     
     return new Promise((resolve) => {

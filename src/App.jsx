@@ -43,19 +43,20 @@ export default function App() {
       
       try {
         // Load GeoJSON boundaries (neighborhoods, districts, provinces)
+        // NOTE: paths are relative to public/ and will be resolved with BASE_URL
         const neighborhoodPaths = [
-          '/data/boundaries/ankara_neighborhoods.geojson',
-          '/data/boundaries/istanbul_neighborhoods.geojson',
+          'data/boundaries/ankara_neighborhoods.geojson',
+          'data/boundaries/istanbul_neighborhoods.geojson',
         ];
         
         const districtPaths = [
-          '/data/boundaries/ankara_districts.geojson',
-          '/data/boundaries/istanbul_districts.geojson',
+          'data/boundaries/ankara_districts.geojson',
+          'data/boundaries/istanbul_districts.geojson',
         ];
         
         const provincePaths = [
-          '/data/boundaries/ankara_province.geojson',
-          '/data/boundaries/istanbul_province_polygon.geojson',
+          'data/boundaries/ankara_province.geojson',
+          'data/boundaries/istanbul_province_polygon.geojson',
         ];
         
         // Load all boundary types
@@ -69,13 +70,13 @@ export default function App() {
         let geojson = neighborhoods;
         if (!geojson || geojson.features.length === 0) {
           geojson = await loadGeoJSONs([
-            '/data/ankara_mahalle_risk.geojson',
-            '/data/istanbul_mahalle_risk.geojson',
+            'data/ankara_mahalle_risk.geojson',
+            'data/istanbul_mahalle_risk.geojson',
           ]);
         }
         
         // Load CSV data for selected year
-        const csvPath = `/data/risk/${selectedYear}.csv`;
+        const csvPath = `data/risk/${selectedYear}.csv`;
         const csv = await loadCSV(csvPath);
         
         if (isCancelled) return;
