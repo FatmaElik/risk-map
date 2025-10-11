@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import useAppStore from './state/useAppStore';
 import { loadGeoJSONs, loadCSV, joinCsvToGeojson } from './data/loadData';
+import { ensureWGS84, mergeFC } from './utils/spatial';
 import MapView from './components/MapView';
 import BasemapToggle from './components/BasemapToggle';
 import YearSelect from './components/YearSelect';
@@ -78,8 +79,17 @@ export default function App() {
         
         if (isCancelled) return;
         
-        // Join CSV data with GeoJSON
-        const joined = joinCsvToGeojson(geojson, csv);
+        // Validate and join CSV data with GeoJSON
+        let validatedGeojson;
+        try {
+          validatedGeojson = ensureWGS84(geojson);
+          console.log('✅ GeoJSON coordinates validated');
+        } catch (error) {
+          console.error('❌ GeoJSON coordinate validation failed:', error);
+          // Continue with original data but show warning
+        }
+        
+        const joined = joinCsvToGeojson(validatedGeojson || geojson, csv);
         
         // Extract unique districts for filter
         const districtsMap = new Map();

@@ -3,6 +3,73 @@
  */
 
 /**
+ * Validate that GeoJSON is in WGS84 (longitude/latitude) format
+ * @param {Object} geojson - GeoJSON object to validate
+ * @returns {Object} The same GeoJSON object
+ * @throws {Error} If coordinates are not in valid WGS84 range
+ */
+export function ensureWGS84(geojson) {
+  if (!geojson || !geojson.features) return geojson;
+  
+  const coords = [];
+  geojson.features.forEach(feature => {
+    const geometry = feature.geometry;
+    if (!geometry) return;
+    
+    if (geometry.type === 'Point') {
+      coords.push(geometry.coordinates);
+    } else if (geometry.type === 'Polygon') {
+      coords.push(...geometry.coordinates[0]);
+    } else if (geometry.type === 'MultiPolygon') {
+      geometry.coordinates.forEach(poly => {
+        coords.push(...poly[0]);
+      });
+    }
+  });
+  
+  if (coords.length === 0) return geojson;
+  
+  // Check coordinate ranges
+  let minX = Infinity, maxX = -Infinity;
+  let minY = Infinity, maxY = -Infinity;
+  
+  coords.forEach(coord => {
+    const [x, y] = coord;
+    if (x < minX) minX = x;
+    if (x > maxX) maxX = x;
+    if (y < minY) minY = y;
+    if (y > maxY) maxY = y;
+  });
+  
+  const looksLikeLonLat = minX >= -180 && maxX <= 180 && minY >= -90 && maxY <= 90;
+  const looksLikeTurkey = minX >= 25 && maxX <= 45 && minY >= 35 && maxY <= 43;
+  
+  if (!looksLikeLonLat) {
+    console.error('❌ Invalid WGS84 coordinates:', { minX, maxX, minY, maxY });
+    throw new Error(`GeoJSON not in WGS84 (EPSG:4326). Range: [${minX}, ${minY}] to [${maxX}, ${maxY}]`);
+  }
+  
+  if (!looksLikeTurkey) {
+    console.warn('⚠️ Coordinates outside Turkey bounds:', { minX, maxX, minY, maxY });
+  }
+  
+  return geojson;
+}
+
+/**
+ * Merge multiple GeoJSON FeatureCollections into one
+ * @param {Array} fcs - Array of FeatureCollection objects
+ * @returns {Object} Merged FeatureCollection
+ */
+export function mergeFC(fcs) {
+  const allFeatures = fcs.flatMap(fc => fc?.features ?? []);
+  return {
+    type: 'FeatureCollection',
+    features: allFeatures
+  };
+}
+
+/**
  * Convert UTM coordinates to WGS84 (longitude/latitude).
  * @param {number} x - UTM X coordinate.
  * @param {number} y - UTM Y coordinate.

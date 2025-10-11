@@ -4,7 +4,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import useAppStore from '../state/useAppStore';
 import { getBins } from '../data/bins';
 import { getColorExpression, getColorRamp } from '../utils/color';
-import { getBounds } from '../utils/spatial';
+import { getBounds, ensureWGS84, mergeFC } from '../utils/spatial';
 import { formatMetric, getMetricLabel } from '../utils/format';
 
 const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_KEY || '';
@@ -47,11 +47,15 @@ export default function MapView() {
   useEffect(() => {
     if (!mapDivRef.current) return;
     
+    // Turkey bounds to prevent zooming outside Turkey
+    const TURKEY_BOUNDS = [[25.0, 35.5], [45.0, 42.5]];
+    
     const map = new maplibregl.Map({
       container: mapDivRef.current,
       style: getStyleUrl(basemapStyle),
-      center: [32.5, 40.8],
+      center: [32.5, 40.8], // Center of Turkey
       zoom: 6,
+      maxBounds: TURKEY_BOUNDS,
     });
     
     mapRef.current = map;
@@ -64,6 +68,7 @@ export default function MapView() {
     map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'bottom-right');
     
     map.on('load', () => {
+      console.log('🗺️ Map loaded, setting up initial view');
       setMapLoaded(true);
     });
     
@@ -162,39 +167,44 @@ export default function MapView() {
     }
   }, [provinceBoundaries, districtBoundaries, mapLoaded, selectedCities]);
   
-  // Zoom to selected cities
+  // Data-driven zoom to selected cities using polygon bounds only
   useEffect(() => {
-    if (!mapRef.current || !mapLoaded || !provinceBoundaries) return;
+    if (!mapRef.current || !mapLoaded || !geojsonData) return;
     
     const map = mapRef.current;
     
-    // Filter province features by selected cities
-    const cityFeatures = provinceBoundaries.features.filter(f => {
-      const cityName = f.properties?.city || f.properties?.NAME_1 || f.properties?.IL_ADI || '';
-      const cityLower = cityName.toLowerCase();
-      
-      return selectedCities.some(sc => {
-        const scLower = sc.toLowerCase();
-        return cityLower.includes(scLower) || scLower.includes(cityLower) ||
-               (scLower === 'istanbul' && (cityLower.includes('istanbul') || cityLower.includes('constantinople'))) ||
-               (scLower === 'ankara' && cityLower.includes('ankara'));
-      });
+    // Filter neighborhood features by selected cities
+    const cityFeatures = geojsonData.features.filter(f => {
+      const city = f.properties?.city;
+      return selectedCities.includes(city);
     });
     
-    console.log('🔍 Zoom debug:', {
+    console.log('🔍 City zoom debug:', {
       selectedCities,
       cityFeatures: cityFeatures.length,
-      sampleFeature: provinceBoundaries.features[0]?.properties
+      totalFeatures: geojsonData.features.length
     });
     
     if (cityFeatures.length > 0) {
-      const cityBounds = getBounds({ type: 'FeatureCollection', features: cityFeatures });
-      if (cityBounds) {
-        console.log('📍 Fitting bounds:', cityBounds);
-        map.fitBounds(cityBounds, { padding: 80, duration: 1000 });
+      try {
+        // Validate coordinates are in Turkey
+        const cityFC = ensureWGS84({ type: 'FeatureCollection', features: cityFeatures });
+        const cityBounds = getBounds(cityFC);
+        
+        if (cityBounds) {
+          console.log('📍 Fitting to city bounds:', cityBounds);
+          map.fitBounds(cityBounds, { padding: 48, duration: 500 });
+        }
+      } catch (error) {
+        console.error('❌ Coordinate validation failed:', error);
+        // Fallback to default Turkey view
+        map.fitBounds([[25.0, 35.5], [45.0, 42.5]], { padding: 40, duration: 500 });
       }
+    } else {
+      // No features match filter, show toast and keep current view
+      console.warn('⚠️ No features match current city filter');
     }
-  }, [selectedCities, provinceBoundaries, mapLoaded]);
+  }, [selectedCities, geojsonData, mapLoaded]);
   
   // Add/update map layers when data changes
   useEffect(() => {
@@ -234,9 +244,18 @@ export default function MapView() {
     
     // Fit bounds to data (only on initial load)
     if (!initialFitDoneRef.current && filteredData.features.length > 0) {
-      const bounds = getBounds(filteredData);
-      if (bounds) {
-        map.fitBounds(bounds, { padding: 50, duration: 800 });
+      try {
+        const validatedData = ensureWGS84(filteredData);
+        const bounds = getBounds(validatedData);
+        if (bounds) {
+          console.log('📍 Initial fit bounds to Turkey data:', bounds);
+          map.fitBounds(bounds, { padding: 40, duration: 0 });
+          initialFitDoneRef.current = true;
+        }
+      } catch (error) {
+        console.error('❌ Initial bounds calculation failed:', error);
+        // Fallback to Turkey bounds
+        map.fitBounds([[25.0, 35.5], [45.0, 42.5]], { padding: 40, duration: 0 });
         initialFitDoneRef.current = true;
       }
     }
