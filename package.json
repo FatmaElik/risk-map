@@ -12,6 +12,7 @@
   "dependencies": {
     "d3-array": "^3.2.4",
     "d3-scale": "^4.0.2",
+    "lucide-react": "^0.545.0",
     "maplibre-gl": "^5.9.0",
     "papaparse": "^5.5.3",
     "react": "^19.1.1",

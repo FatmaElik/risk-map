@@ -6,6 +6,7 @@ import MapView from './components/MapView';
 import BasemapToggle from './components/BasemapToggle';
 import YearSelect from './components/YearSelect';
 import MetricLegend from './components/MetricLegend';
+import MetricSelect from './components/MetricSelect';
 import CityDistrictControls from './components/CityDistrictControls';
 import ScatterPanel from './components/ScatterPanel';
 import './App.css';
@@ -149,42 +150,17 @@ export default function App() {
       
       {/* Metric Selector (below year) */}
       <div
+        className="absolute top-44 right-4 w-48 p-3 rounded-2xl shadow-lg bg-white/85 backdrop-blur supports-[backdrop-filter]:bg-white/60"
         style={{
-          position: 'absolute',
-          top: 176,
-          right: 16,
           zIndex: 10,
-          background: 'rgba(255, 255, 255, 0.95)',
-          backdropFilter: 'blur(4px)',
-          borderRadius: 12,
-          padding: '10px 14px',
-          boxShadow: '0 2px 12px rgba(0, 0, 0, 0.15)',
           fontFamily: 'system-ui, -apple-system, sans-serif',
           fontSize: 13,
         }}
       >
-        <div style={{ fontWeight: 600, marginBottom: 8, color: '#374151' }}>
+        <div className="font-semibold mb-2 text-neutral-800">
           Metric
         </div>
-        <select
-          value={metric}
-          onChange={(e) => setMetric(e.target.value)}
-          style={{
-            width: '100%',
-            padding: '6px 10px',
-            border: '1px solid #D1D5DB',
-            borderRadius: 8,
-          fontSize: 12,
-            fontFamily: 'inherit',
-            cursor: 'pointer',
-            background: 'white',
-          }}
-        >
-          <option value="risk_score">Risk Score</option>
-          <option value="vs30_mean">VS30 (m/s)</option>
-          <option value="population">Population</option>
-          <option value="building_count">Building Count</option>
-        </select>
+        <MetricSelect />
       </div>
       
       {/* City & District Controls (top left) */}

@@ -5,6 +5,7 @@ import { extractScatterData } from '../data/loadData';
 import { getMetricLabel, getMetricShortLabel, formatMetric } from '../utils/format';
 import { getColor } from '../utils/color';
 import { getBins } from '../data/bins';
+import UiSelect from './ui/UiSelect';
 
 /**
  * Scatter plot panel with district filtering and neighborhood selection
@@ -270,53 +271,23 @@ export default function ScatterPanel() {
         
         <div style={{ display: 'flex', gap: 12, fontSize: 12 }}>
           <div style={{ flex: 1 }}>
-            <label style={{ display: 'block', marginBottom: 4, color: '#6B7280', fontSize: 11 }}>
-              X Axis
-            </label>
-            <select
+            <UiSelect
+              label="X Axis"
+              options={metrics.map(m => ({ label: getMetricLabel(m), value: m }))}
               value={scatterXMetric}
-              onChange={(e) => setScatterXMetric(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '4px 8px',
-                border: '1px solid #D1D5DB',
-                borderRadius: 6,
-                fontSize: 11,
-                fontFamily: 'inherit',
-                cursor: 'pointer',
-              }}
-            >
-              {metrics.map(m => (
-                <option key={m} value={m}>
-                  {getMetricLabel(m)}
-                </option>
-              ))}
-            </select>
+              onChange={setScatterXMetric}
+              className="text-xs"
+            />
           </div>
           
           <div style={{ flex: 1 }}>
-            <label style={{ display: 'block', marginBottom: 4, color: '#6B7280', fontSize: 11 }}>
-              Y Axis
-            </label>
-            <select
+            <UiSelect
+              label="Y Axis"
+              options={metrics.map(m => ({ label: getMetricLabel(m), value: m }))}
               value={scatterYMetric}
-              onChange={(e) => setScatterYMetric(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '4px 8px',
-                border: '1px solid #D1D5DB',
-                borderRadius: 6,
-                fontSize: 11,
-                fontFamily: 'inherit',
-                cursor: 'pointer',
-              }}
-            >
-              {metrics.map(m => (
-                <option key={m} value={m}>
-                  {getMetricLabel(m)}
-                </option>
-              ))}
-            </select>
+              onChange={setScatterYMetric}
+              className="text-xs"
+            />
           </div>
         </div>
       </div>
