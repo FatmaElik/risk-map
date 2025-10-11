@@ -1,6 +1,6 @@
 {
   "version": 2,
   "name": "risk-map",
-  "alias": ["risk-map.vercel.app"],
+  "alias": ["turkiye-risk-map.vercel.app"],
   "rewrites": [{ "source": "/(.*)", "destination": "/" }]
 }
