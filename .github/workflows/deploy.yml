@@ -2,13 +2,13 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main ]   # ana branch'in buysa
   workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
+  pages: write       # ✅ deploy-pages için şart
+  id-token: write    # ✅ deploy-pages için şart
 
 concurrency:
   group: "pages"
@@ -30,12 +30,12 @@ jobs:
       - name: Install
         run: npm ci
 
-      - name: Build
+      - name: Build (Vite)
         env:
           VITE_MAPTILER_KEY: ${{ secrets.VITE_MAPTILER_KEY }}
         run: npm run build
 
-      - name: Copy 404 fallback
+      - name: 404 fallback for SPA
         run: cp dist/index.html dist/404.html
 
       - name: Upload artifact
