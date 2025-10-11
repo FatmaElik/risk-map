@@ -8,7 +8,8 @@
     "build": "vite build",
     "build:vercel": "vite build --config vite.config.vercel.ts",
     "preview": "vite preview",
-    "postbuild": "cp dist/index.html dist/404.html"
+    "postbuild": "cp dist/index.html dist/404.html",
+    "deploy:prod": "vercel pull --yes && vercel deploy --prod --yes"
   },
   "dependencies": {
     "d3-array": "^3.2.4",

@@ -1,0 +1,12 @@
+node_modules
+.git
+.gitignore
+.vscode
+**/*.map
+risk-map-data-pipeline/
+dist/
+.github/
+scripts/
+*.md
+!README.md
+
