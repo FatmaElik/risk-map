@@ -27,6 +27,8 @@ export default function MapView() {
     basemapStyle,
     metric,
     geojsonData,
+    districtBoundaries,
+    provinceBoundaries,
     selectedNeighborhood,
     setSelectedNeighborhood,
     selectedDistricts,
@@ -88,6 +90,95 @@ export default function MapView() {
       }
     });
   }, [basemapStyle, mapLoaded]);
+  
+  // Add province and district boundaries when loaded
+  useEffect(() => {
+    if (!mapRef.current || !mapLoaded) return;
+    const map = mapRef.current;
+    
+    // Add province boundaries (thick lines)
+    if (provinceBoundaries && !map.getSource('provinces')) {
+      map.addSource('provinces', {
+        type: 'geojson',
+        data: provinceBoundaries,
+      });
+      
+      map.addLayer({
+        id: 'province-line',
+        type: 'line',
+        source: 'provinces',
+        paint: {
+          'line-color': '#FF4444',
+          'line-width': 4,
+          'line-opacity': 0.9,
+        },
+      }); // Add on top
+    }
+    
+    // Add district boundaries (medium lines)
+    if (districtBoundaries && !map.getSource('districts')) {
+      map.addSource('districts', {
+        type: 'geojson',
+        data: districtBoundaries,
+      });
+      
+      map.addLayer({
+        id: 'district-line',
+        type: 'line',
+        source: 'districts',
+        paint: {
+          'line-color': '#FFB84D',
+          'line-width': 2,
+          'line-opacity': 0.7,
+        },
+      }); // Add on top, below provinces
+    }
+    
+    // Update district and province visibility based on selected cities
+    if (map.getLayer('district-line') && districtBoundaries) {
+      const districtFilter = selectedCities.length === 2 ? null : [
+        'in',
+        ['get', 'city'],
+        ['literal', selectedCities]
+      ];
+      if (districtFilter) {
+        map.setFilter('district-line', districtFilter);
+      } else {
+        map.setFilter('district-line', null);
+      }
+    }
+    
+    if (map.getLayer('province-line') && provinceBoundaries) {
+      const provinceFilter = selectedCities.length === 2 ? null : [
+        'in',
+        ['get', 'city'],
+        ['literal', selectedCities]
+      ];
+      if (provinceFilter) {
+        map.setFilter('province-line', provinceFilter);
+      } else {
+        map.setFilter('province-line', null);
+      }
+    }
+  }, [provinceBoundaries, districtBoundaries, mapLoaded, selectedCities]);
+  
+  // Zoom to selected cities
+  useEffect(() => {
+    if (!mapRef.current || !mapLoaded || !provinceBoundaries) return;
+    
+    const map = mapRef.current;
+    const cityFeatures = provinceBoundaries.features.filter(f => {
+      const city = f.properties?.city || f.properties?.NAME_1 || '';
+      return selectedCities.some(sc => city.toLowerCase().includes(sc.toLowerCase()));
+    });
+    
+    if (cityFeatures.length > 0) {
+      const cityBounds = getBounds({ type: 'FeatureCollection', features: cityFeatures });
+      if (cityBounds) {
+        map.fitBounds(cityBounds, { padding: 80, duration: 1000 });
+      }
+    }
+  }, [selectedCities, provinceBoundaries, mapLoaded]);
   
   // Add/update map layers when data changes
   useEffect(() => {

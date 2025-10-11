@@ -63,6 +63,8 @@ const useAppStore = create((set, get) => ({
   // Data
   geojsonData: null,
   csvData: null,
+  districtBoundaries: null,
+  provinceBoundaries: null,
   setGeojsonData: (data) => set({ geojsonData: data }),
   setCsvData: (data) => set({ csvData: data }),
   

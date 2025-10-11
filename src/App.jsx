@@ -40,23 +40,36 @@ export default function App() {
       setIsLoadingData(true);
       
       try {
-        // Load GeoJSON boundaries (same for all years)
-        const geojsonPaths = [
+        // Load GeoJSON boundaries (neighborhoods, districts, provinces)
+        const neighborhoodPaths = [
           '/data/boundaries/ankara_neighborhoods.geojson',
           '/data/boundaries/istanbul_neighborhoods.geojson',
         ];
         
-        // If boundaries don't exist, fall back to old paths
-        const fallbackPaths = [
-          '/data/ankara_mahalle_risk.geojson',
-          '/data/istanbul_mahalle_risk.geojson',
+        const districtPaths = [
+          '/data/boundaries/ankara_districts.geojson',
+          '/data/boundaries/istanbul_districts.geojson',
         ];
         
-        let geojson = await loadGeoJSONs(geojsonPaths);
+        const provincePaths = [
+          '/data/boundaries/ankara_province.geojson',
+          '/data/boundaries/istanbul_province_polygon.geojson',
+        ];
         
-        // Try fallback if new paths don't work
+        // Load all boundary types
+        const [neighborhoods, districtBoundaries, provinceBoundaries] = await Promise.all([
+          loadGeoJSONs(neighborhoodPaths),
+          loadGeoJSONs(districtPaths),
+          loadGeoJSONs(provincePaths),
+        ]);
+        
+        // Fallback to old paths if new structure doesn't exist
+        let geojson = neighborhoods;
         if (!geojson || geojson.features.length === 0) {
-          geojson = await loadGeoJSONs(fallbackPaths);
+          geojson = await loadGeoJSONs([
+            '/data/ankara_mahalle_risk.geojson',
+            '/data/istanbul_mahalle_risk.geojson',
+          ]);
         }
         
         // Load CSV data for selected year
@@ -85,6 +98,12 @@ export default function App() {
         setGeojsonData(joined);
         setCsvData(csv);
         setAvailableDistricts(sortedDistricts);
+        
+        // Store boundary layers in store
+        useAppStore.setState({ 
+          districtBoundaries,
+          provinceBoundaries,
+        });
         
         console.log('✅ Data loaded successfully:', {
           features: joined?.features?.length || 0,
