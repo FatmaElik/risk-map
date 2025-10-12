@@ -227,48 +227,124 @@ export function extractScatterData(csvData, geojson = null) {
 
 /**
  * Calculate bounding box from GeoJSON FeatureCollection
+ * @returns {Array|null} [minLng, minLat, maxLng, maxLat] or null
  */
-export function calculateBbox(geojson) {
-  if (!geojson || !geojson.features || geojson.features.length === 0) {
-    return null;
-  }
+export function bboxFromFeatureCollection(fc) {
+  if (!fc || !fc.features || fc.features.length === 0) return null;
 
-  let minLon = Infinity;
-  let minLat = Infinity;
-  let maxLon = -Infinity;
+  let minLng = +Infinity;
+  let minLat = +Infinity;
+  let maxLng = -Infinity;
   let maxLat = -Infinity;
 
-  geojson.features.forEach(feature => {
-    if (!feature.geometry) return;
-
-    const extractCoords = (coords) => {
-      if (typeof coords[0] === 'number') {
-        // Single coordinate pair
-        const [lon, lat] = coords;
-        minLon = Math.min(minLon, lon);
-        maxLon = Math.max(maxLon, lon);
-        minLat = Math.min(minLat, lat);
-        maxLat = Math.max(maxLat, lat);
-      } else {
-        // Nested array
-        coords.forEach(extractCoords);
-      }
-    };
-
-    if (feature.geometry.type === 'Polygon') {
-      extractCoords(feature.geometry.coordinates);
-    } else if (feature.geometry.type === 'MultiPolygon') {
-      feature.geometry.coordinates.forEach(extractCoords);
+  const visitCoord = (c) => {
+    // GeoJSON: [lng, lat]
+    const lng = c[0];
+    const lat = c[1];
+    if (Number.isFinite(lng) && Number.isFinite(lat)) {
+      if (lng < minLng) minLng = lng;
+      if (lat < minLat) minLat = lat;
+      if (lng > maxLng) maxLng = lng;
+      if (lat > maxLat) maxLat = lat;
     }
-  });
+  };
 
-  if (minLon === Infinity) return null;
+  const visitGeom = (geom) => {
+    if (!geom) return;
+    const { type, coordinates } = geom;
+    if (!coordinates) return;
+    if (type === 'Point') visitCoord(coordinates);
+    else if (type === 'MultiPoint' || type === 'LineString') coordinates.forEach(visitCoord);
+    else if (type === 'MultiLineString' || type === 'Polygon') coordinates.flat(1).forEach(visitCoord);
+    else if (type === 'MultiPolygon') coordinates.flat(2).forEach(visitCoord);
+  };
 
+  for (const f of fc.features) {
+    visitGeom(f.geometry);
+  }
+
+  if (!Number.isFinite(minLng) || !Number.isFinite(minLat) || !Number.isFinite(maxLng) || !Number.isFinite(maxLat)) {
+    return null;
+  }
+  
+  return [minLng, minLat, maxLng, maxLat];
+}
+
+/**
+ * Combine multiple bboxes into one
+ * @param {Array} list - Array of bbox arrays
+ * @returns {Array|null} [minLng, minLat, maxLng, maxLat] or null
+ */
+export function combineBbox(list) {
+  const valid = (list || []).filter(Boolean);
+  if (valid.length === 0) return null;
+
+  let minLng = +Infinity;
+  let minLat = +Infinity;
+  let maxLng = -Infinity;
+  let maxLat = -Infinity;
+  
+  for (const b of valid) {
+    const normalized = normalizeBbox(b);
+    if (!normalized) continue;
+    
+    const [lng1, lat1, lng2, lat2] = normalized;
+    if (lng1 < minLng) minLng = lng1;
+    if (lat1 < minLat) minLat = lat1;
+    if (lng2 > maxLng) maxLng = lng2;
+    if (lat2 > maxLat) maxLat = lat2;
+  }
+  
+  if (!Number.isFinite(minLng)) return null;
+  
+  return [minLng, minLat, maxLng, maxLat];
+}
+
+/**
+ * Normalize and fix swapped or inverted bbox
+ * @param {Array} b - bbox array (various formats)
+ * @returns {Array|null} [minLng, minLat, maxLng, maxLat] or null
+ */
+export function normalizeBbox(b) {
+  if (!b || b.length < 4) return null;
+  
+  // Handle nested [[lng,lat],[lng,lat]] format
+  if (Array.isArray(b[0])) {
+    const [sw, ne] = b;
+    return normalizeBbox([sw[0], sw[1], ne[0], ne[1]]);
+  }
+  
+  let [x1, y1, x2, y2] = b.map(Number);
+
+  // If it looks like [lat,lng,lat,lng], swap pairs by heuristic
+  // lat must be [-90,90], lng must be [-180,180]
+  const looksSwapped =
+    Math.abs(x1) <= 90 && Math.abs(y1) <= 180 && Math.abs(x2) <= 90 && Math.abs(y2) <= 180;
+
+  if (looksSwapped) {
+    // swap each pair
+    [x1, y1] = [y1, x1];
+    [x2, y2] = [y2, x2];
+  }
+
+  // Ensure min/max order
+  const minLng = Math.min(x1, x2);
+  const minLat = Math.min(y1, y2);
+  const maxLng = Math.max(x1, x2);
+  const maxLat = Math.max(y1, y2);
+
+  // Clamp to valid ranges
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
   return [
-    [minLon, minLat],
-    [maxLon, maxLat],
+    clamp(minLng, -180, 180),
+    clamp(minLat,  -90,  90),
+    clamp(maxLng, -180, 180),
+    clamp(maxLat,  -90,  90),
   ];
 }
+
+// Legacy alias for compatibility
+export const calculateBbox = bboxFromFeatureCollection;
 
 /**
  * Clear all caches

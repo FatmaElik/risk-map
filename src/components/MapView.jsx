@@ -8,6 +8,35 @@ import { getBounds, ensureWGS84, mergeFC } from '../utils/spatial';
 import { formatMetric, getMetricLabel } from '../utils/format';
 import { MAPTILER_KEY } from '../lib/env';
 import { t, getRiskLabel } from '../i18n';
+import { normalizeBbox } from '../data/loadData';
+
+/**
+ * Safe fitBounds with bbox normalization and fallback
+ */
+function safeFitBounds(map, rawBbox, options = {}) {
+  try {
+    const bb = normalizeBbox(rawBbox);
+    if (!bb) throw new Error('Invalid bbox');
+    
+    const [minLng, minLat, maxLng, maxLat] = bb;
+
+    // Sanity checks
+    if (!Number.isFinite(minLng) || !Number.isFinite(minLat) || !Number.isFinite(maxLng) || !Number.isFinite(maxLat)) {
+      throw new Error('Non-finite bbox');
+    }
+    if (minLng < -180 || maxLng > 180 || minLat < -90 || maxLat > 90) {
+      throw new Error('Out-of-range bbox');
+    }
+
+    console.log('✅ safeFitBounds:', bb);
+    map.fitBounds([[minLng, minLat], [maxLng, maxLat]], { padding: 40, duration: 800, ...options });
+  } catch (e) {
+    console.error('❌ safeFitBounds fallback:', e?.message || e);
+    // Türkiye merkez fallback
+    map.setCenter([35, 39]);
+    map.setZoom(5.5);
+  }
+}
 
 /**
  * Main MapLibre map view with polygon layers, popups, and highlighting
@@ -211,7 +240,7 @@ export default function MapView() {
     // Initial fit on load
     if (bbox.combined) {
       console.log('📍 Initial fit to combined bbox');
-      map.fitBounds(bbox.combined, { padding: 40, duration: 0 });
+      safeFitBounds(map, bbox.combined, { padding: 40, duration: 0 });
       initialFitDoneRef.current = true;
     }
   }, [mapLoaded, bbox]);
@@ -238,7 +267,7 @@ export default function MapView() {
     
     if (targetBbox) {
       console.log('🎯 Fitting to cities:', selectedCities, targetBbox);
-      map.fitBounds(targetBbox, { padding: 48, duration: 500 });
+      safeFitBounds(map, targetBbox, { padding: 48, duration: 500 });
     }
   }, [selectedCities, mapLoaded, bbox]);
   
@@ -278,23 +307,7 @@ export default function MapView() {
       addMapLayers(map, filteredData);
     }
     
-    // Fit bounds to data (only on initial load)
-    if (!initialFitDoneRef.current && filteredData.features.length > 0) {
-      try {
-        const validatedData = ensureWGS84(filteredData);
-        const bounds = getBounds(validatedData);
-        if (bounds) {
-          console.log('📍 Initial fit bounds to Turkey data:', bounds);
-          map.fitBounds(bounds, { padding: 40, duration: 0 });
-          initialFitDoneRef.current = true;
-        }
-      } catch (error) {
-        console.error('❌ Initial bounds calculation failed:', error);
-        // Fallback to Turkey bounds
-        map.fitBounds([[25.0, 35.5], [45.0, 42.5]], { padding: 40, duration: 0 });
-        initialFitDoneRef.current = true;
-      }
-    }
+    // Initial fit is handled by bbox useEffect (no duplicate fit here)
   }, [geojsonData, mapLoaded, selectedCities, selectedDistricts]);
   
   // Update colors when choropleth metric changes
@@ -516,7 +529,7 @@ export default function MapView() {
       if (feature) {
         const bounds = getBounds({ type: 'Feature', geometry: feature.geometry });
         if (bounds) {
-          mapRef.current.fitBounds(bounds, { padding: 100, duration: 600 });
+          safeFitBounds(mapRef.current, bounds, { padding: 100, duration: 600 });
         }
       }
     };

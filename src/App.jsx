@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import useAppStore from './state/useAppStore';
-import { loadGeoJSONs, loadCSV, joinCsvToGeojson, calculateBbox } from './data/loadData';
+import { loadGeoJSONs, loadCSV, joinCsvToGeojson, bboxFromFeatureCollection, combineBbox } from './data/loadData';
 import { ensureWGS84, mergeFC } from './utils/spatial';
 import { BOUNDARIES } from './data/config.geo';
 import MapView from './components/MapView';
@@ -119,13 +119,17 @@ export default function App() {
           },
         });
         
-        // Calculate bounding boxes
+        // Calculate bounding boxes using new helpers
+        const istBbox = istanbulDistGeo ? bboxFromFeatureCollection(istanbulDistGeo) : null;
+        const ankBbox = ankaraDistGeo ? bboxFromFeatureCollection(ankaraDistGeo) : null;
+        const combinedBbox = combineBbox([istBbox, ankBbox]);
+        
         const bboxData = {
           city: {
-            istanbul: istanbulDistGeo ? calculateBbox(istanbulDistGeo) : null,
-            ankara: ankaraDistGeo ? calculateBbox(ankaraDistGeo) : null,
+            istanbul: istBbox,
+            ankara: ankBbox,
           },
-          combined: districtBoundaries ? calculateBbox(districtBoundaries) : null,
+          combined: combinedBbox,
         };
         
         setGeojsonData(joined);
