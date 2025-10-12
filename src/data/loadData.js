@@ -226,7 +226,29 @@ export function extractScatterData(csvData, geojson = null) {
 }
 
 /**
+ * Turkey default bbox (safe fallback)
+ * Format: [minLng, minLat, maxLng, maxLat]
+ * Covers: Aegean 25°E...Eastern 45°E, Southern 35°N...Northern 43°N
+ */
+export const TR_FALLBACK_BBOX = [25, 35, 45, 43];
+
+/**
+ * Recursive coordinate walker for all GeoJSON geometry types
+ */
+function walkCoords(coords, visit) {
+  if (!coords) return;
+  // Point: [lng, lat]
+  if (typeof coords[0] === 'number' && typeof coords[1] === 'number') {
+    visit(coords);
+    return;
+  }
+  // Multi* and Polygon/MultiPolygon deep arrays
+  for (const c of coords) walkCoords(c, visit);
+}
+
+/**
  * Calculate bounding box from GeoJSON FeatureCollection
+ * @param {Object} fc - GeoJSON FeatureCollection
  * @returns {Array|null} [minLng, minLat, maxLng, maxLat] or null
  */
 export function bboxFromFeatureCollection(fc) {
@@ -237,36 +259,29 @@ export function bboxFromFeatureCollection(fc) {
   let maxLng = -Infinity;
   let maxLat = -Infinity;
 
-  const visitCoord = (c) => {
-    // GeoJSON: [lng, lat]
-    const lng = c[0];
-    const lat = c[1];
-    if (Number.isFinite(lng) && Number.isFinite(lat)) {
-      if (lng < minLng) minLng = lng;
-      if (lat < minLat) minLat = lat;
-      if (lng > maxLng) maxLng = lng;
-      if (lat > maxLat) maxLat = lat;
-    }
-  };
-
-  const visitGeom = (geom) => {
-    if (!geom) return;
-    const { type, coordinates } = geom;
-    if (!coordinates) return;
-    if (type === 'Point') visitCoord(coordinates);
-    else if (type === 'MultiPoint' || type === 'LineString') coordinates.forEach(visitCoord);
-    else if (type === 'MultiLineString' || type === 'Polygon') coordinates.flat(1).forEach(visitCoord);
-    else if (type === 'MultiPolygon') coordinates.flat(2).forEach(visitCoord);
+  const visit = (xy) => {
+    // GeoJSON position: [lng, lat]
+    const lng = Number(xy[0]);
+    const lat = Number(xy[1]);
+    if (!Number.isFinite(lng) || !Number.isFinite(lat)) return;
+    if (lng < minLng) minLng = lng;
+    if (lat < minLat) minLat = lat;
+    if (lng > maxLng) maxLng = lng;
+    if (lat > maxLat) maxLat = lat;
   };
 
   for (const f of fc.features) {
-    visitGeom(f.geometry);
+    const g = f && f.geometry;
+    if (!g || !g.coordinates) continue;
+    walkCoords(g.coordinates, visit);
   }
 
-  if (!Number.isFinite(minLng) || !Number.isFinite(minLat) || !Number.isFinite(maxLng) || !Number.isFinite(maxLat)) {
-    return null;
-  }
+  if (![minLng, minLat, maxLng, maxLat].every(Number.isFinite)) return null;
   
+  // Final validation: lng/lat ranges and size
+  if (minLng >= maxLng || minLat >= maxLat) return null;
+  if (minLng < -180 || maxLng > 180 || minLat < -90 || maxLat > 90) return null;
+
   return [minLng, minLat, maxLng, maxLat];
 }
 
@@ -276,26 +291,23 @@ export function bboxFromFeatureCollection(fc) {
  * @returns {Array|null} [minLng, minLat, maxLng, maxLat] or null
  */
 export function combineBbox(list) {
-  const valid = (list || []).filter(Boolean);
-  if (valid.length === 0) return null;
+  const boxes = (list || []).map(normalizeBbox).filter(Boolean);
+  if (boxes.length === 0) return null;
 
   let minLng = +Infinity;
   let minLat = +Infinity;
   let maxLng = -Infinity;
   let maxLat = -Infinity;
   
-  for (const b of valid) {
-    const normalized = normalizeBbox(b);
-    if (!normalized) continue;
-    
-    const [lng1, lat1, lng2, lat2] = normalized;
-    if (lng1 < minLng) minLng = lng1;
-    if (lat1 < minLat) minLat = lat1;
-    if (lng2 > maxLng) maxLng = lng2;
-    if (lat2 > maxLat) maxLat = lat2;
+  for (const [a, b, c, d] of boxes) {
+    if (a < minLng) minLng = a;
+    if (b < minLat) minLat = b;
+    if (c > maxLng) maxLng = c;
+    if (d > maxLat) maxLat = d;
   }
   
-  if (!Number.isFinite(minLng)) return null;
+  if (![minLng, minLat, maxLng, maxLat].every(Number.isFinite)) return null;
+  if (minLng >= maxLng || minLat >= maxLat) return null;
   
   return [minLng, minLat, maxLng, maxLat];
 }
@@ -306,41 +318,55 @@ export function combineBbox(list) {
  * @returns {Array|null} [minLng, minLat, maxLng, maxLat] or null
  */
 export function normalizeBbox(b) {
-  if (!b || b.length < 4) return null;
-  
+  if (!b) return null;
+
   // Handle nested [[lng,lat],[lng,lat]] format
   if (Array.isArray(b[0])) {
-    const [sw, ne] = b;
-    return normalizeBbox([sw[0], sw[1], ne[0], ne[1]]);
+    if (!Array.isArray(b[1])) return null;
+    const sw = b[0];
+    const ne = b[1];
+    const lng1 = Number(sw[0]);
+    const lat1 = Number(sw[1]);
+    const lng2 = Number(ne[0]);
+    const lat2 = Number(ne[1]);
+    if (![lng1, lat1, lng2, lat2].every(Number.isFinite)) return null;
+    
+    const minLng = Math.min(lng1, lng2);
+    const minLat = Math.min(lat1, lat2);
+    const maxLng = Math.max(lng1, lng2);
+    const maxLat = Math.max(lat1, lat2);
+    
+    if (minLng < -180 || maxLng > 180 || minLat < -90 || maxLat > 90) return null;
+    if (minLng >= maxLng || minLat >= maxLat) return null;
+    
+    return [minLng, minLat, maxLng, maxLat];
   }
-  
-  let [x1, y1, x2, y2] = b.map(Number);
 
-  // If it looks like [lat,lng,lat,lng], swap pairs by heuristic
-  // lat must be [-90,90], lng must be [-180,180]
+  // Expect [x1,y1,x2,y2] format
+  if (!Array.isArray(b) || b.length !== 4) return null;
+  let [x1, y1, x2, y2] = b.map(Number);
+  if (![x1, y1, x2, y2].every(Number.isFinite)) return null;
+
+  // Heuristic: lat ∈ [-90,90], lng ∈ [-180,180]
   const looksSwapped =
-    Math.abs(x1) <= 90 && Math.abs(y1) <= 180 && Math.abs(x2) <= 90 && Math.abs(y2) <= 180;
+    Math.abs(x1) <= 90 && Math.abs(y1) <= 180 &&
+    Math.abs(x2) <= 90 && Math.abs(y2) <= 180;
 
   if (looksSwapped) {
-    // swap each pair
     [x1, y1] = [y1, x1];
     [x2, y2] = [y2, x2];
   }
 
-  // Ensure min/max order
   const minLng = Math.min(x1, x2);
   const minLat = Math.min(y1, y2);
   const maxLng = Math.max(x1, x2);
   const maxLat = Math.max(y1, y2);
 
-  // Clamp to valid ranges
-  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
-  return [
-    clamp(minLng, -180, 180),
-    clamp(minLat,  -90,  90),
-    clamp(maxLng, -180, 180),
-    clamp(maxLat,  -90,  90),
-  ];
+  // Invalid range or out-of-world → return null (no clamping to hide errors)
+  if (minLng < -180 || maxLng > 180 || minLat < -90 || maxLat > 90) return null;
+  if (minLng >= maxLng || minLat >= maxLat) return null;
+
+  return [minLng, minLat, maxLng, maxLat];
 }
 
 // Legacy alias for compatibility

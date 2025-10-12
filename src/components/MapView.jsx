@@ -8,10 +8,10 @@ import { getBounds, ensureWGS84, mergeFC } from '../utils/spatial';
 import { formatMetric, getMetricLabel } from '../utils/format';
 import { MAPTILER_KEY } from '../lib/env';
 import { t, getRiskLabel } from '../i18n';
-import { normalizeBbox } from '../data/loadData';
+import { normalizeBbox, TR_FALLBACK_BBOX } from '../data/loadData';
 
 /**
- * Safe fitBounds with bbox normalization and fallback
+ * Safe fitBounds with bbox normalization and Turkey fallback
  */
 function safeFitBounds(map, rawBbox, options = {}) {
   try {
@@ -19,22 +19,13 @@ function safeFitBounds(map, rawBbox, options = {}) {
     if (!bb) throw new Error('Invalid bbox');
     
     const [minLng, minLat, maxLng, maxLat] = bb;
-
-    // Sanity checks
-    if (!Number.isFinite(minLng) || !Number.isFinite(minLat) || !Number.isFinite(maxLng) || !Number.isFinite(maxLat)) {
-      throw new Error('Non-finite bbox');
-    }
-    if (minLng < -180 || maxLng > 180 || minLat < -90 || maxLat > 90) {
-      throw new Error('Out-of-range bbox');
-    }
-
-    console.log('✅ safeFitBounds:', bb);
     map.fitBounds([[minLng, minLat], [maxLng, maxLat]], { padding: 40, duration: 800, ...options });
+    console.debug('✅ safeFitBounds:', bb);
   } catch (e) {
-    console.error('❌ safeFitBounds fallback:', e?.message || e);
-    // Türkiye merkez fallback
-    map.setCenter([35, 39]);
-    map.setZoom(5.5);
+    console.warn('⚠️ safeFitBounds fallback:', e?.message || e, '→ Using TR_FALLBACK_BBOX');
+    const [mlon, mlat, xlon, xlat] = TR_FALLBACK_BBOX;
+    map.fitBounds([[mlon, mlat], [xlon, xlat]], { padding: 40, duration: 800, ...options });
+    console.debug('✅ fallback TR bbox:', TR_FALLBACK_BBOX);
   }
 }
 
