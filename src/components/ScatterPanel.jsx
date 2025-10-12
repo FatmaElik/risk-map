@@ -173,11 +173,11 @@ export default function ScatterPanel() {
       const x = xScale(point[scatterXMetric]);
       const y = yScale(point[scatterYMetric]);
       
-      // Get color based on color metric
+      // Get color based on risk_score (fixed, not affected by metric selector)
       let color = '#3B82F6';
       if (colorBins) {
         const colorRamp = ['#FEF3C7', '#FCD34D', '#F59E0B', '#EF4444', '#991B1B'];
-        color = getColor(point[colorMetric], colorBins, colorRamp);
+        color = getColor(point.risk_score, colorBins, colorRamp);
       }
       
       ctx.fillStyle = color;
@@ -195,7 +195,7 @@ export default function ScatterPanel() {
       point._idx = idx;
     });
     
-  }, [scatterData, scatterXMetric, scatterYMetric, colorMetric, colorBins]);
+  }, [scatterData, scatterXMetric, scatterYMetric, colorBins]);
   
   // Handle mouse move for tooltip
   const handleMouseMove = (e) => {
