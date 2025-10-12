@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import useAppStore from '../state/useAppStore';
+import { t } from '../i18n';
 
 /**
  * City toggle and district multi-select filter
@@ -46,11 +47,11 @@ export default function CityDistrictControls() {
   
   return (
     <div
+      className="left-drawer"
       style={{
         position: 'absolute',
         top: 16,
         left: 16,
-        zIndex: 10,
         background: 'rgba(255, 255, 255, 0.95)',
         backdropFilter: 'blur(4px)',
         borderRadius: 12,
@@ -64,29 +65,34 @@ export default function CityDistrictControls() {
       {/* City Toggle */}
       <div style={{ marginBottom: 12 }}>
         <div style={{ fontWeight: 600, marginBottom: 8, color: '#374151' }}>
-          Cities
+          {t('select_city')}
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          {['Istanbul', 'Ankara'].map(city => (
-            <button
-              key={city}
-              onClick={() => toggleCity(city)}
-              style={{
-                padding: '6px 12px',
-                border: selectedCities.includes(city) ? '2px solid #3B82F6' : '1px solid #D1D5DB',
-                borderRadius: 8,
-                background: selectedCities.includes(city) ? '#EFF6FF' : 'white',
-                color: selectedCities.includes(city) ? '#1E40AF' : '#6B7280',
-                fontWeight: selectedCities.includes(city) ? 600 : 400,
-                cursor: 'pointer',
-                fontSize: 12,
-                transition: 'all 0.2s',
-              }}
-              aria-pressed={selectedCities.includes(city)}
-            >
-              {city}
-            </button>
-          ))}
+          {['Istanbul', 'Ankara'].map(city => {
+            const isSelected = selectedCities.includes(city);
+            const cityKey = city.toLowerCase();
+            
+            return (
+              <button
+                key={city}
+                onClick={() => toggleCity(city)}
+                style={{
+                  padding: '6px 12px',
+                  border: isSelected ? '2px solid #3B82F6' : '1px solid #D1D5DB',
+                  borderRadius: 8,
+                  background: isSelected ? '#EFF6FF' : 'white',
+                  color: isSelected ? '#1E40AF' : '#6B7280',
+                  fontWeight: isSelected ? 600 : 400,
+                  cursor: 'pointer',
+                  fontSize: 12,
+                  transition: 'all 0.2s',
+                }}
+                aria-pressed={isSelected}
+              >
+                {t(cityKey)}
+              </button>
+            );
+          })}
         </div>
       </div>
       
@@ -99,7 +105,7 @@ export default function CityDistrictControls() {
           marginBottom: 8,
         }}>
           <div style={{ fontWeight: 600, color: '#374151' }}>
-            Districts
+            {t('select_district')}
             {hasSelection && (
               <span style={{ 
                 marginLeft: 6, 
@@ -107,7 +113,7 @@ export default function CityDistrictControls() {
                 color: '#6B7280',
                 fontWeight: 400,
               }}>
-                ({selectedDistricts.length} selected)
+                ({selectedDistricts.length})
               </span>
             )}
           </div>

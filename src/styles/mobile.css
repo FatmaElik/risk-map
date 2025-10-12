@@ -1,6 +1,35 @@
 /* Mobile-friendly responsive styles */
 
+/* Left drawer width - adjust if your panel is different */
+:root {
+  --drawer-w: 280px;
+}
+
+/* Scatter panel positioning to avoid left panel overlap */
+@media (min-width: 769px) {
+  /* Desktop: dock to right, avoid left panel */
+  .scatter-dock {
+    position: fixed;
+    bottom: 16px;
+    right: 16px;
+    left: calc(var(--drawer-w) + 32px);
+    max-width: 520px;
+    z-index: 15;
+    pointer-events: auto;
+  }
+}
+
 @media (max-width: 768px) {
+  /* Tablet/Mobile: full width with margins */
+  .scatter-dock {
+    position: fixed;
+    bottom: 12px;
+    left: 12px;
+    right: 12px;
+    max-width: none;
+    z-index: 15;
+  }
+  
   /* Ensure controls are touch-friendly */
   button, select, input {
     min-height: 40px;
@@ -11,21 +40,6 @@
   .controls-container {
     flex-direction: column !important;
     gap: 8px !important;
-  }
-  
-  /* Make scatter panel collapsible by default on mobile */
-  .scatter-panel {
-    width: calc(100vw - 32px) !important;
-    max-width: 420px;
-  }
-  
-  /* Adjust legend position */
-  .legend {
-    bottom: auto !important;
-    top: auto !important;
-    right: 8px !important;
-    left: auto !important;
-    max-width: calc(100vw - 16px);
   }
   
   /* Reduce padding on control cards */
@@ -40,9 +54,19 @@
     font-size: 11px !important;
   }
   
-  .scatter-panel {
-    height: auto !important;
+  .scatter-dock {
     max-height: 50vh;
+    overflow-y: auto;
   }
+}
+
+/* Left control panel z-index */
+.left-drawer {
+  z-index: 20;
+}
+
+/* Map controls bottom margin to avoid scatter */
+.maplibregl-ctrl-bottom-right {
+  margin-bottom: 96px;
 }
 

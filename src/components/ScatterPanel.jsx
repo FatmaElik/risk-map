@@ -248,12 +248,8 @@ export default function ScatterPanel() {
   
   return (
     <div
+      className="scatter-dock"
       style={{
-        position: 'absolute',
-        bottom: 16,
-        left: 16,
-        width: 480,
-        maxWidth: 'calc(100vw - 32px)',
         height: isOpen ? 320 : 'auto',
         background: 'rgba(255, 255, 255, 0.95)',
         backdropFilter: 'blur(4px)',
@@ -263,7 +259,6 @@ export default function ScatterPanel() {
         fontFamily: 'system-ui, -apple-system, sans-serif',
         display: 'flex',
         flexDirection: 'column',
-        zIndex: 10,
       }}
     >
       {/* Collapsible Header */}

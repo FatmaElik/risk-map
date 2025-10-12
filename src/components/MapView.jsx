@@ -48,6 +48,7 @@ export default function MapView() {
     setSelectedNeighborhood,
     selectedDistricts,
     selectedCities,
+    cityZoomTrigger,
     bbox,
     locale,
   } = useAppStore();
@@ -236,10 +237,11 @@ export default function MapView() {
     }
   }, [mapLoaded, bbox]);
   
-  // City selection focus (triggered only when cities change)
+  // City selection focus (triggered by cityZoomTrigger to handle re-clicks)
   useEffect(() => {
     if (!mapRef.current || !mapLoaded || !bbox.combined) return;
     if (!initialFitDoneRef.current) return; // Wait for initial fit
+    if (cityZoomTrigger === 0) return; // Skip on initial render
     
     const map = mapRef.current;
     let targetBbox = null;
@@ -260,7 +262,7 @@ export default function MapView() {
       console.log('🎯 Fitting to cities:', selectedCities, targetBbox);
       safeFitBounds(map, targetBbox, { padding: 48, duration: 500 });
     }
-  }, [selectedCities, mapLoaded, bbox]);
+  }, [cityZoomTrigger, mapLoaded, bbox]);
   
   // Add/update map layers when data changes
   useEffect(() => {

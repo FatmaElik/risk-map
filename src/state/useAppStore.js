@@ -24,15 +24,20 @@ const useAppStore = create((set, get) => ({
   
   // City selection (array of 'Istanbul', 'Ankara', or both) - NO AUTO-SELECT
   selectedCities: ['Istanbul', 'Ankara'],
+  cityZoomTrigger: 0, // Counter to force zoom even when clicking already-selected city
   setSelectedCities: (cities) => set({ selectedCities: cities }),
   toggleCity: (city) => {
-    const { selectedCities } = get();
-    const newCities = selectedCities.includes(city)
+    const { selectedCities, cityZoomTrigger } = get();
+    const wasSelected = selectedCities.includes(city);
+    const newCities = wasSelected
       ? selectedCities.filter(c => c !== city)
       : [...selectedCities, city];
     
-    // Allow empty selection (will show combined bbox)
-    set({ selectedCities: newCities });
+    // Always increment trigger to force zoom (even if re-clicking same city)
+    set({ 
+      selectedCities: newCities,
+      cityZoomTrigger: cityZoomTrigger + 1,
+    });
   },
   
   // District filter (multi-select)
