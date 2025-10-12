@@ -7,6 +7,7 @@ import { getColorExpression, getColorRamp } from '../utils/color';
 import { getBounds, ensureWGS84, mergeFC } from '../utils/spatial';
 import { formatMetric, getMetricLabel } from '../utils/format';
 import { MAPTILER_KEY } from '../lib/env';
+import { t, getRiskLabel } from '../i18n';
 
 /**
  * Main MapLibre map view with polygon layers, popups, and highlighting
@@ -23,11 +24,12 @@ export default function MapView() {
     metric,
     geojsonData,
     districtBoundaries,
-    provinceBoundaries,
     selectedNeighborhood,
     setSelectedNeighborhood,
     selectedDistricts,
     selectedCities,
+    bbox,
+    locale,
   } = useAppStore();
   
   // Get basemap style URL
@@ -176,44 +178,45 @@ export default function MapView() {
     }
   }, [provinceBoundaries, districtBoundaries, mapLoaded, selectedCities]);
   
-  // Data-driven zoom to selected cities using polygon bounds only
+  // Data-driven zoom to selected cities using precomputed bbox
   useEffect(() => {
-    if (!mapRef.current || !mapLoaded || !geojsonData) return;
+    if (!mapRef.current || !mapLoaded || !bbox.combined || initialFitDoneRef.current) return;
     
     const map = mapRef.current;
     
-    // Filter neighborhood features by selected cities
-    const cityFeatures = geojsonData.features.filter(f => {
-      const city = f.properties?.city;
-      return selectedCities.includes(city);
-    });
-    
-    console.log('🔍 City zoom debug:', {
-      selectedCities,
-      cityFeatures: cityFeatures.length,
-      totalFeatures: geojsonData.features.length
-    });
-    
-    if (cityFeatures.length > 0) {
-      try {
-        // Validate coordinates are in Turkey
-        const cityFC = ensureWGS84({ type: 'FeatureCollection', features: cityFeatures });
-        const cityBounds = getBounds(cityFC);
-        
-        if (cityBounds) {
-          console.log('📍 Fitting to city bounds:', cityBounds);
-          map.fitBounds(cityBounds, { padding: 48, duration: 500 });
-        }
-      } catch (error) {
-        console.error('❌ Coordinate validation failed:', error);
-        // Fallback to default Turkey view
-        map.fitBounds([[25.0, 35.5], [45.0, 42.5]], { padding: 40, duration: 500 });
-      }
-    } else {
-      // No features match filter, show toast and keep current view
-      console.warn('⚠️ No features match current city filter');
+    // Initial fit on load
+    if (bbox.combined) {
+      console.log('📍 Initial fit to combined bbox');
+      map.fitBounds(bbox.combined, { padding: 40, duration: 0 });
+      initialFitDoneRef.current = true;
     }
-  }, [selectedCities, geojsonData, mapLoaded]);
+  }, [mapLoaded, bbox]);
+  
+  // City selection focus (triggered only when cities change)
+  useEffect(() => {
+    if (!mapRef.current || !mapLoaded || !bbox.combined) return;
+    if (!initialFitDoneRef.current) return; // Wait for initial fit
+    
+    const map = mapRef.current;
+    let targetBbox = null;
+    
+    if (selectedCities.length === 0) {
+      // No cities selected: show combined
+      targetBbox = bbox.combined;
+    } else if (selectedCities.length === 1) {
+      // Single city: use its bbox
+      const city = selectedCities[0].toLowerCase();
+      targetBbox = bbox.city[city];
+    } else {
+      // Both cities: use combined
+      targetBbox = bbox.combined;
+    }
+    
+    if (targetBbox) {
+      console.log('🎯 Fitting to cities:', selectedCities, targetBbox);
+      map.fitBounds(targetBbox, { padding: 48, duration: 500 });
+    }
+  }, [selectedCities, mapLoaded, bbox]);
   
   // Add/update map layers when data changes
   useEffect(() => {
@@ -396,7 +399,7 @@ export default function MapView() {
       const population = props.toplam_nufus || props.population;
       const buildingCount = props.toplam_bina || props.building_count;
       const riskScore = props.risk_score;
-      const vs30 = props.vs30_mean || props.vs30;
+      const riskLabel = getRiskLabel(riskScore, locale);
       
       const html = `
         <div style="font-family: system-ui, sans-serif; font-size: 13px;">
@@ -407,17 +410,14 @@ export default function MapView() {
             ${district} • ${city}
           </div>
           <div style="display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 12px;">
-            <span style="color: #6B7280;">Population:</span>
+            <span style="color: #6B7280;">${t('risk_label')}:</span>
+            <span style="font-weight: 600; color: #DC2626;">${riskLabel}</span>
+            
+            <span style="color: #6B7280;">${t('population')}:</span>
             <span style="font-weight: 600; color: #374151;">${formatMetric('population', population)}</span>
             
-            <span style="color: #6B7280;">Buildings:</span>
+            <span style="color: #6B7280;">${t('building_count')}:</span>
             <span style="font-weight: 600; color: #374151;">${formatMetric('building_count', buildingCount)}</span>
-            
-            <span style="color: #6B7280;">Risk Score:</span>
-            <span style="font-weight: 600; color: #374151;">${formatMetric('risk_score', riskScore)}</span>
-            
-            <span style="color: #6B7280;">VS30:</span>
-            <span style="font-weight: 600; color: #374151;">${formatMetric('vs30_mean', vs30)}</span>
           </div>
           <div style="margin-top: 12px; display: flex; gap: 8px;">
             <button

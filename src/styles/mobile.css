@@ -1,0 +1,48 @@
+/* Mobile-friendly responsive styles */
+
+@media (max-width: 768px) {
+  /* Ensure controls are touch-friendly */
+  button, select, input {
+    min-height: 40px;
+    min-width: 40px;
+  }
+  
+  /* Stack controls vertically on small screens */
+  .controls-container {
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+  
+  /* Make scatter panel collapsible by default on mobile */
+  .scatter-panel {
+    width: calc(100vw - 32px) !important;
+    max-width: 420px;
+  }
+  
+  /* Adjust legend position */
+  .legend {
+    bottom: auto !important;
+    top: auto !important;
+    right: 8px !important;
+    left: auto !important;
+    max-width: calc(100vw - 16px);
+  }
+  
+  /* Reduce padding on control cards */
+  .control-card {
+    padding: 8px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Ultra-compact for phones */
+  .control-card {
+    font-size: 11px !important;
+  }
+  
+  .scatter-panel {
+    height: auto !important;
+    max-height: 50vh;
+  }
+}
+

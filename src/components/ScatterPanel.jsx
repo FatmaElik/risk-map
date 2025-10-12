@@ -1,14 +1,16 @@
 import { useEffect, useRef, useMemo, useState } from 'react';
 import { scaleLinear } from 'd3-scale';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import useAppStore from '../state/useAppStore';
 import { extractScatterData } from '../data/loadData';
 import { getMetricLabel, getMetricShortLabel, formatMetric } from '../utils/format';
 import { getColor } from '../utils/color';
 import { getBins } from '../data/bins';
 import UiSelect from './ui/UiSelect';
+import { t } from '../i18n';
 
 /**
- * Scatter plot panel with district filtering and neighborhood selection
+ * Scatter plot panel with district filtering and neighborhood selection (collapsible)
  */
 export default function ScatterPanel() {
   const canvasRef = useRef(null);
@@ -25,8 +27,11 @@ export default function ScatterPanel() {
     selectedDistricts,
     selectedCities,
     setSelectedNeighborhood,
-    metric: colorMetric,
+    ui,
+    setUiFlag,
   } = useAppStore();
+  
+  const isOpen = ui.scatterOpen;
   
   // Extract scatter data from GeoJSON or CSV
   const scatterData = useMemo(() => {
@@ -50,15 +55,15 @@ export default function ScatterPanel() {
     );
   }, [geojsonData, csvData, scatterXMetric, scatterYMetric, selectedDistricts, selectedCities]);
   
-  // Calculate color bins for current color metric
+  // Calculate color bins (NOT affected by metric selector, only scatter axes)
   const colorBins = useMemo(() => {
     const values = scatterData
-      .map(p => p[colorMetric])
+      .map(p => p.risk_score)
       .filter(v => Number.isFinite(v));
     
     if (values.length === 0) return null;
     return getBins(values);
-  }, [scatterData, colorMetric]);
+  }, [scatterData]);
   
   // Render scatter plot
   useEffect(() => {
@@ -248,11 +253,12 @@ export default function ScatterPanel() {
         bottom: 16,
         left: 16,
         width: 480,
-        height: 320,
+        maxWidth: 'calc(100vw - 32px)',
+        height: isOpen ? 320 : 'auto',
         background: 'rgba(255, 255, 255, 0.95)',
         backdropFilter: 'blur(4px)',
         borderRadius: 12,
-        padding: 16,
+        padding: isOpen ? 16 : 0,
         boxShadow: '0 2px 12px rgba(0, 0, 0, 0.15)',
         fontFamily: 'system-ui, -apple-system, sans-serif',
         display: 'flex',
@@ -260,6 +266,31 @@ export default function ScatterPanel() {
         zIndex: 10,
       }}
     >
+      {/* Collapsible Header */}
+      <div
+        onClick={() => setUiFlag('scatterOpen', !isOpen)}
+        style={{
+          padding: '12px 16px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          cursor: 'pointer',
+          borderBottom: isOpen ? '1px solid #E5E7EB' : 'none',
+        }}
+      >
+        <div style={{ fontWeight: 700, fontSize: 14, color: '#1F2937' }}>
+          {t('scatter_plot')}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#6B7280', fontSize: 11 }}>
+          <span>{scatterData.length} {t('neighborhoods')}</span>
+          {isOpen ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+        </div>
+      </div>
+      
+      {/* Collapsible Content */}
+      {isOpen && (
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+
       {/* Header with metric selectors */}
       <div style={{ marginBottom: 12 }}>
         <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 10, color: '#374151' }}>
@@ -366,6 +397,8 @@ export default function ScatterPanel() {
         }}>
           No data available for selected filters
         </div>
+      )}
+      </div>
       )}
     </div>
   );

@@ -12,6 +12,7 @@ import CityDistrictControls from './components/CityDistrictControls';
 import ScatterPanel from './components/ScatterPanel';
 import LanguageToggle from './components/LanguageToggle';
 import './App.css';
+import './styles/mobile.css';
 
 /**
  * Main application component
