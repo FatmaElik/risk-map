@@ -21,7 +21,7 @@ export default function MapView() {
   
   const {
     basemapStyle,
-    metric,
+    choroplethMetric,
     geojsonData,
     boundaries,
     selectedNeighborhood,
@@ -297,12 +297,13 @@ export default function MapView() {
     }
   }, [geojsonData, mapLoaded, selectedCities, selectedDistricts]);
   
-  // Update colors when metric changes
+  // Update colors when choropleth metric changes
   useEffect(() => {
-    if (!mapRef.current || !mapLoaded || !geojsonData || !metric) return;
+    if (!mapRef.current || !mapLoaded || !geojsonData) return;
     
-    updateChoropleth(mapRef.current, metric, geojsonData);
-  }, [metric, geojsonData, mapLoaded]);
+    const metricToUse = choroplethMetric || 'risk_score';
+    updateChoropleth(mapRef.current, metricToUse, geojsonData);
+  }, [choroplethMetric, geojsonData, mapLoaded]);
   
   // Handle selection highlighting
   useEffect(() => {
@@ -381,8 +382,9 @@ export default function MapView() {
       });
     }
     
-    // Update choropleth
-    updateChoropleth(map, metric, geojsonData);
+    // Update choropleth with current metric
+    const metricToUse = choroplethMetric || 'risk_score';
+    updateChoropleth(map, metricToUse, geojsonData);
     
     // Add interaction handlers
     setupInteractions(map);

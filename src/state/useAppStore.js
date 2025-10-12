@@ -51,9 +51,9 @@ const useAppStore = create((set, get) => ({
   selectedNeighborhood: null,
   setSelectedNeighborhood: (neighborhood) => set({ selectedNeighborhood: neighborhood }),
   
-  // Metric selection
-  metric: 'risk_score',
-  setMetric: (metric) => set({ metric }),
+  // Choropleth metric (map coloring) - independent from scatter
+  choroplethMetric: 'risk_score',
+  setChoroplethMetric: (metric) => set({ choroplethMetric: metric }),
   
   // Scatter panel state (decoupled from metric)
   scatterXMetric: 'risk_score',

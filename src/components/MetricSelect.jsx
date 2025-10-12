@@ -1,5 +1,6 @@
 import useAppStore from '../state/useAppStore';
 import UiSelect from './ui/UiSelect';
+import { t } from '../i18n';
 
 const metricOptions = [
   { label: "Risk Score", value: "risk_score" },
@@ -9,19 +10,19 @@ const metricOptions = [
 ];
 
 /**
- * Metric selector with dark themed dropdown
+ * Choropleth metric selector (map coloring) - does NOT affect scatter shapes
  */
 export default function MetricSelect() {
-  const metric = useAppStore((s) => s.metric);
-  const setMetric = useAppStore((s) => s.setMetric);
+  const choroplethMetric = useAppStore((s) => s.choroplethMetric || 'risk_score');
+  const setChoroplethMetric = useAppStore((s) => s.setChoroplethMetric);
 
   return (
     <div className="space-y-2">
       <UiSelect
         options={metricOptions}
-        value={metric}
-        onChange={setMetric}
-        aria-label="Metric"
+        value={choroplethMetric}
+        onChange={setChoroplethMetric}
+        aria-label={t('metric')}
       />
     </div>
   );

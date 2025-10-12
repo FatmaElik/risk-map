@@ -27,8 +27,6 @@ export default function App() {
     setAvailableDistricts,
     setBoundaries,
     setBbox,
-    metric,
-    setMetric,
     geojsonData,
   } = useAppStore();
   
@@ -159,7 +157,6 @@ export default function App() {
     };
   }, [selectedYear, setGeojsonData, setCsvData, setIsLoadingData, setAvailableDistricts]);
 
-  const metrics = ['risk_score', 'vs30_mean', 'population', 'building_count'];
 
   return (
     <div style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden' }}>

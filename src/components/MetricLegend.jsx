@@ -5,15 +5,17 @@ import { formatNumber, getMetricLabel } from '../utils/format';
 import useAppStore from '../state/useAppStore';
 
 /**
- * 5-class legend for the current metric
+ * 5-class legend for the current choropleth metric
  */
 export default function MetricLegend() {
-  const { metric, geojsonData } = useAppStore();
+  const { choroplethMetric, geojsonData } = useAppStore();
   
   // Calculate bins from current data
-  const { bins, colors, legend } = useMemo(() => {
+  const { bins, colors, legend, metric } = useMemo(() => {
+    const metric = choroplethMetric || 'risk_score';
+    
     if (!geojsonData || !geojsonData.features) {
-      return { bins: [0, 0.2, 0.4, 0.6, 0.8, 1], colors: [], legend: [] };
+      return { bins: [0, 0.2, 0.4, 0.6, 0.8, 1], colors: [], legend: [], metric };
     }
     
     // Extract values for current metric
@@ -22,7 +24,7 @@ export default function MetricLegend() {
       .filter(v => Number.isFinite(v));
     
     if (values.length === 0) {
-      return { bins: [0, 0.2, 0.4, 0.6, 0.8, 1], colors: [], legend: [] };
+      return { bins: [0, 0.2, 0.4, 0.6, 0.8, 1], colors: [], legend: [], metric };
     }
     
     const bins = getBins(values);
@@ -34,8 +36,8 @@ export default function MetricLegend() {
     
     const legend = getLegend(bins, (v) => formatNumber(v, decimals));
     
-    return { bins, colors, legend };
-  }, [geojsonData, metric]);
+    return { bins, colors, legend, metric };
+  }, [geojsonData, choroplethMetric]);
   
   if (legend.length === 0) return null;
   
