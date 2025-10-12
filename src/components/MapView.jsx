@@ -23,7 +23,7 @@ export default function MapView() {
     basemapStyle,
     metric,
     geojsonData,
-    districtBoundaries,
+    boundaries,
     selectedNeighborhood,
     setSelectedNeighborhood,
     selectedDistricts,
@@ -112,11 +112,35 @@ export default function MapView() {
     if (!mapRef.current || !mapLoaded) return;
     const map = mapRef.current;
     
-    // Add province boundaries (thick lines)
-    if (provinceBoundaries && !map.getSource('provinces')) {
+    // Extract boundaries from store
+    const provinceIST = boundaries?.province?.istanbul;
+    const provinceANK = boundaries?.province?.ankara;
+    const districtIST = boundaries?.district?.istanbul;
+    const districtANK = boundaries?.district?.ankara;
+    
+    // Merge province boundaries
+    const provinceBoundariesMerged = 
+      provinceIST && provinceANK
+        ? {
+            type: 'FeatureCollection',
+            features: [...provinceIST.features, ...provinceANK.features],
+          }
+        : provinceIST || provinceANK || null;
+    
+    // Merge district boundaries
+    const districtBoundariesMerged =
+      districtIST && districtANK
+        ? {
+            type: 'FeatureCollection',
+            features: [...districtIST.features, ...districtANK.features],
+          }
+        : districtIST || districtANK || null;
+    
+    // Add province boundaries (thick red lines)
+    if (provinceBoundariesMerged && !map.getSource('provinces')) {
       map.addSource('provinces', {
         type: 'geojson',
-        data: provinceBoundaries,
+        data: provinceBoundariesMerged,
       });
       
       map.addLayer({
@@ -128,14 +152,14 @@ export default function MapView() {
           'line-width': 5,
           'line-opacity': 1.0,
         },
-      }); // Add on top
+      });
     }
     
-    // Add district boundaries (medium lines)
-    if (districtBoundaries && !map.getSource('districts')) {
+    // Add district boundaries (orange lines)
+    if (districtBoundariesMerged && !map.getSource('districts')) {
       map.addSource('districts', {
         type: 'geojson',
-        data: districtBoundaries,
+        data: districtBoundariesMerged,
       });
       
       map.addLayer({
@@ -147,11 +171,11 @@ export default function MapView() {
           'line-width': 3,
           'line-opacity': 0.9,
         },
-      }); // Add on top, below provinces
+      });
     }
     
-    // Update district and province visibility based on selected cities
-    if (map.getLayer('district-line') && districtBoundaries) {
+    // Update visibility based on selected cities
+    if (map.getLayer('district-line') && districtBoundariesMerged) {
       const districtFilter = selectedCities.length === 2 ? null : [
         'in',
         ['get', 'city'],
@@ -164,7 +188,7 @@ export default function MapView() {
       }
     }
     
-    if (map.getLayer('province-line') && provinceBoundaries) {
+    if (map.getLayer('province-line') && provinceBoundariesMerged) {
       const provinceFilter = selectedCities.length === 2 ? null : [
         'in',
         ['get', 'city'],
@@ -176,7 +200,7 @@ export default function MapView() {
         map.setFilter('province-line', null);
       }
     }
-  }, [provinceBoundaries, districtBoundaries, mapLoaded, selectedCities]);
+  }, [boundaries, mapLoaded, selectedCities]);
   
   // Data-driven zoom to selected cities using precomputed bbox
   useEffect(() => {

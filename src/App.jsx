@@ -25,6 +25,7 @@ export default function App() {
     setCsvData,
     setIsLoadingData,
     setAvailableDistricts,
+    setBoundaries,
     setBbox,
     metric,
     setMetric,
@@ -93,25 +94,38 @@ export default function App() {
           a.name.localeCompare(b.name, 'tr')
         );
         
-        // Calculate bounding boxes for each city
-        const istanbulFeatures = districtBoundaries?.features?.filter(
+        // Split district boundaries by city
+        const istanbulDistricts = districtBoundaries?.features?.filter(
           f => f.properties?.city === 'Istanbul'
         ) || [];
-        const ankaraFeatures = districtBoundaries?.features?.filter(
+        const ankaraDistricts = districtBoundaries?.features?.filter(
           f => f.properties?.city === 'Ankara'
         ) || [];
         
-        const istanbulGeo = istanbulFeatures.length > 0 
-          ? { type: 'FeatureCollection', features: istanbulFeatures }
+        const istanbulDistGeo = istanbulDistricts.length > 0 
+          ? { type: 'FeatureCollection', features: istanbulDistricts }
           : null;
-        const ankaraGeo = ankaraFeatures.length > 0
-          ? { type: 'FeatureCollection', features: ankaraFeatures }
+        const ankaraDistGeo = ankaraDistricts.length > 0
+          ? { type: 'FeatureCollection', features: ankaraDistricts }
           : null;
         
+        // Store boundaries in new structure
+        setBoundaries({
+          district: {
+            istanbul: istanbulDistGeo,
+            ankara: ankaraDistGeo,
+          },
+          province: {
+            istanbul: istanbulDistGeo, // Use districts as province for now
+            ankara: ankaraDistGeo,
+          },
+        });
+        
+        // Calculate bounding boxes
         const bboxData = {
           city: {
-            istanbul: istanbulGeo ? calculateBbox(istanbulGeo) : null,
-            ankara: ankaraGeo ? calculateBbox(ankaraGeo) : null,
+            istanbul: istanbulDistGeo ? calculateBbox(istanbulDistGeo) : null,
+            ankara: ankaraDistGeo ? calculateBbox(ankaraDistGeo) : null,
           },
           combined: districtBoundaries ? calculateBbox(districtBoundaries) : null,
         };
@@ -120,11 +134,6 @@ export default function App() {
         setCsvData(csv);
         setAvailableDistricts(sortedDistricts);
         setBbox(bboxData);
-        
-        // Store boundary layers in store
-        useAppStore.setState({ 
-          districtBoundaries,
-        });
         
         console.log('✅ Data loaded successfully:', {
           features: joined?.features?.length || 0,

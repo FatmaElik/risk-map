@@ -79,8 +79,16 @@ const useAppStore = create((set, get) => ({
   // Data & bounding boxes
   geojsonData: null,
   csvData: null,
-  districtBoundaries: null,
-  provinceBoundaries: null,
+  boundaries: {
+    province: {
+      istanbul: null,
+      ankara: null,
+    },
+    district: {
+      istanbul: null,
+      ankara: null,
+    },
+  },
   bbox: {
     city: {
       istanbul: null,
@@ -90,7 +98,18 @@ const useAppStore = create((set, get) => ({
   },
   setGeojsonData: (data) => set({ geojsonData: data }),
   setCsvData: (data) => set({ csvData: data }),
-  setBbox: (bboxData) => set({ bbox: bboxData }),
+  setBoundaries: (part) => set((state) => ({
+    boundaries: {
+      ...state.boundaries,
+      ...part,
+    },
+  })),
+  setBbox: (bboxData) => set((state) => ({
+    bbox: {
+      ...state.bbox,
+      ...bboxData,
+    },
+  })),
   
   // Available districts (computed from data)
   availableDistricts: [],
