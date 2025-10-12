@@ -41,3 +41,5 @@ dist-ssr
 *dummy*.csv
 *il_poligonu*
 *ilce_siniri*
+
+.vercel

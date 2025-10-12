@@ -4,6 +4,13 @@ import { create } from 'zustand';
  * Global application state store using Zustand
  */
 const useAppStore = create((set, get) => ({
+  // Locale selection
+  locale: localStorage.getItem('locale') || 'tr',
+  setLocale: (locale) => {
+    localStorage.setItem('locale', locale);
+    set({ locale });
+  },
+  
   // Year selection
   selectedYear: 2025,
   setSelectedYear: (year) => set({ selectedYear: year }),
@@ -15,7 +22,7 @@ const useAppStore = create((set, get) => ({
     set({ basemapStyle: style });
   },
   
-  // City selection (array of 'Istanbul', 'Ankara', or both)
+  // City selection (array of 'Istanbul', 'Ankara', or both) - NO AUTO-SELECT
   selectedCities: ['Istanbul', 'Ankara'],
   setSelectedCities: (cities) => set({ selectedCities: cities }),
   toggleCity: (city) => {
@@ -24,9 +31,7 @@ const useAppStore = create((set, get) => ({
       ? selectedCities.filter(c => c !== city)
       : [...selectedCities, city];
     
-    // Ensure at least one city is selected
-    if (newCities.length === 0) return;
-    
+    // Allow empty selection (will show combined bbox)
     set({ selectedCities: newCities });
   },
   
@@ -50,23 +55,42 @@ const useAppStore = create((set, get) => ({
   metric: 'risk_score',
   setMetric: (metric) => set({ metric }),
   
-  // Scatter panel state
+  // Scatter panel state (decoupled from metric)
   scatterXMetric: 'risk_score',
   scatterYMetric: 'vs30_mean',
   setScatterXMetric: (metric) => set({ scatterXMetric: metric }),
   setScatterYMetric: (metric) => set({ scatterYMetric: metric }),
   
+  // UI flags
+  ui: {
+    scatterOpen: JSON.parse(localStorage.getItem('ui.scatterOpen') || 'true'),
+  },
+  setUiFlag: (key, value) => {
+    localStorage.setItem(`ui.${key}`, JSON.stringify(value));
+    set((state) => ({
+      ui: { ...state.ui, [key]: value }
+    }));
+  },
+  
   // Loading states
   isLoadingData: false,
   setIsLoadingData: (loading) => set({ isLoadingData: loading }),
   
-  // Data
+  // Data & bounding boxes
   geojsonData: null,
   csvData: null,
   districtBoundaries: null,
   provinceBoundaries: null,
+  bbox: {
+    city: {
+      istanbul: null,
+      ankara: null,
+    },
+    combined: null,
+  },
   setGeojsonData: (data) => set({ geojsonData: data }),
   setCsvData: (data) => set({ csvData: data }),
+  setBbox: (bboxData) => set({ bbox: bboxData }),
   
   // Available districts (computed from data)
   availableDistricts: [],

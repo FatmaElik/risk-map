@@ -226,6 +226,51 @@ export function extractScatterData(csvData, geojson = null) {
 }
 
 /**
+ * Calculate bounding box from GeoJSON FeatureCollection
+ */
+export function calculateBbox(geojson) {
+  if (!geojson || !geojson.features || geojson.features.length === 0) {
+    return null;
+  }
+
+  let minLon = Infinity;
+  let minLat = Infinity;
+  let maxLon = -Infinity;
+  let maxLat = -Infinity;
+
+  geojson.features.forEach(feature => {
+    if (!feature.geometry) return;
+
+    const extractCoords = (coords) => {
+      if (typeof coords[0] === 'number') {
+        // Single coordinate pair
+        const [lon, lat] = coords;
+        minLon = Math.min(minLon, lon);
+        maxLon = Math.max(maxLon, lon);
+        minLat = Math.min(minLat, lat);
+        maxLat = Math.max(maxLat, lat);
+      } else {
+        // Nested array
+        coords.forEach(extractCoords);
+      }
+    };
+
+    if (feature.geometry.type === 'Polygon') {
+      extractCoords(feature.geometry.coordinates);
+    } else if (feature.geometry.type === 'MultiPolygon') {
+      feature.geometry.coordinates.forEach(extractCoords);
+    }
+  });
+
+  if (minLon === Infinity) return null;
+
+  return [
+    [minLon, minLat],
+    [maxLon, maxLat],
+  ];
+}
+
+/**
  * Clear all caches
  */
 export function clearCache() {

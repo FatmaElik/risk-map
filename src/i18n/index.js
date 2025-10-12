@@ -1,0 +1,43 @@
+import useAppStore from '../state/useAppStore';
+import trTranslations from './tr.json';
+import enTranslations from './en.json';
+
+const translations = {
+  tr: trTranslations,
+  en: enTranslations,
+};
+
+/**
+ * Simple i18n translation function
+ * @param {string} key - Translation key
+ * @returns {string} - Translated text
+ */
+export function t(key) {
+  const locale = useAppStore.getState().locale || 'tr';
+  return translations[locale]?.[key] || key;
+}
+
+/**
+ * Get risk label for a given risk score
+ * @param {number} value - Risk score (0-1 or 0-100)
+ * @param {string} locale - Language ('tr' or 'en')
+ * @returns {string} - Risk label
+ */
+export function getRiskLabel(value, locale = 'tr') {
+  if (value === null || value === undefined || isNaN(value)) {
+    return translations[locale]?.na || 'N/A';
+  }
+  
+  // Normalize to 0-1 range if needed
+  const normalized = value > 1 ? value / 100 : value;
+  
+  // 5-class equal-interval breakpoints
+  if (normalized < 0.2) return translations[locale]?.risk_very_low || 'Very Low';
+  if (normalized < 0.4) return translations[locale]?.risk_low || 'Low';
+  if (normalized < 0.6) return translations[locale]?.risk_moderate || 'Moderate';
+  if (normalized < 0.8) return translations[locale]?.risk_high || 'High';
+  return translations[locale]?.risk_very_high || 'Very High';
+}
+
+export default { t, getRiskLabel };
+

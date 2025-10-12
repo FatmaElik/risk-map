@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import useAppStore from './state/useAppStore';
-import { loadGeoJSONs, loadCSV, joinCsvToGeojson } from './data/loadData';
+import { loadGeoJSONs, loadCSV, joinCsvToGeojson, calculateBbox } from './data/loadData';
 import { ensureWGS84, mergeFC } from './utils/spatial';
+import { BOUNDARIES } from './data/config.geo';
 import MapView from './components/MapView';
 import BasemapToggle from './components/BasemapToggle';
 import YearSelect from './components/YearSelect';
@@ -9,6 +10,7 @@ import MetricLegend from './components/MetricLegend';
 import MetricSelect from './components/MetricSelect';
 import CityDistrictControls from './components/CityDistrictControls';
 import ScatterPanel from './components/ScatterPanel';
+import LanguageToggle from './components/LanguageToggle';
 import './App.css';
 
 /**
@@ -22,6 +24,7 @@ export default function App() {
     setCsvData,
     setIsLoadingData,
     setAvailableDistricts,
+    setBbox,
     metric,
     setMetric,
     geojsonData,
@@ -42,38 +45,20 @@ export default function App() {
       setIsLoadingData(true);
       
       try {
-        // Load GeoJSON boundaries (neighborhoods, districts, provinces)
-        // NOTE: paths are relative to public/ and will be resolved with BASE_URL
-        const neighborhoodPaths = [
-          'data/boundaries/ankara_neighborhoods.geojson',
-          'data/boundaries/istanbul_neighborhoods.geojson',
-        ];
-        
+        // Load GeoJSON boundaries using centralized config
         const districtPaths = [
-          'data/boundaries/ankara_districts.geojson',
-          'data/boundaries/istanbul_districts.geojson',
+          BOUNDARIES.district.ankara,
+          BOUNDARIES.district.istanbul,
         ];
         
-        const provincePaths = [
-          'data/boundaries/ankara_province.geojson',
-          'data/boundaries/istanbul_province_polygon.geojson',
-        ];
+        // Load district boundaries
+        const districtBoundaries = await loadGeoJSONs(districtPaths);
         
-        // Load all boundary types
-        const [neighborhoods, districtBoundaries, provinceBoundaries] = await Promise.all([
-          loadGeoJSONs(neighborhoodPaths),
-          loadGeoJSONs(districtPaths),
-          loadGeoJSONs(provincePaths),
+        // Fallback to old paths for neighborhoods
+        let geojson = await loadGeoJSONs([
+          'data/ankara_mahalle_risk.geojson',
+          'data/istanbul_mahalle_risk.geojson',
         ]);
-        
-        // Fallback to old paths if new structure doesn't exist
-        let geojson = neighborhoods;
-        if (!geojson || geojson.features.length === 0) {
-          geojson = await loadGeoJSONs([
-            'data/ankara_mahalle_risk.geojson',
-            'data/istanbul_mahalle_risk.geojson',
-          ]);
-        }
         
         // Load CSV data for selected year
         const csvPath = `data/risk/${selectedYear}.csv`;
@@ -107,20 +92,48 @@ export default function App() {
           a.name.localeCompare(b.name, 'tr')
         );
         
+        // Calculate bounding boxes for each city
+        const istanbulFeatures = districtBoundaries?.features?.filter(
+          f => f.properties?.city === 'Istanbul'
+        ) || [];
+        const ankaraFeatures = districtBoundaries?.features?.filter(
+          f => f.properties?.city === 'Ankara'
+        ) || [];
+        
+        const istanbulGeo = istanbulFeatures.length > 0 
+          ? { type: 'FeatureCollection', features: istanbulFeatures }
+          : null;
+        const ankaraGeo = ankaraFeatures.length > 0
+          ? { type: 'FeatureCollection', features: ankaraFeatures }
+          : null;
+        
+        const bboxData = {
+          city: {
+            istanbul: istanbulGeo ? calculateBbox(istanbulGeo) : null,
+            ankara: ankaraGeo ? calculateBbox(ankaraGeo) : null,
+          },
+          combined: districtBoundaries ? calculateBbox(districtBoundaries) : null,
+        };
+        
         setGeojsonData(joined);
         setCsvData(csv);
         setAvailableDistricts(sortedDistricts);
+        setBbox(bboxData);
         
         // Store boundary layers in store
         useAppStore.setState({ 
           districtBoundaries,
-          provinceBoundaries,
         });
         
         console.log('✅ Data loaded successfully:', {
           features: joined?.features?.length || 0,
           csvRows: csv?.length || 0,
           districts: sortedDistricts.length,
+          bboxes: {
+            istanbul: bboxData.city.istanbul ? '✅' : '❌',
+            ankara: bboxData.city.ankara ? '✅' : '❌',
+            combined: bboxData.combined ? '✅' : '❌',
+          },
         });
       } catch (error) {
         console.error('❌ Error loading data:', error);
@@ -143,7 +156,10 @@ export default function App() {
       {/* Map View */}
       <MapView />
       
-      {/* Basemap Toggle (top right) */}
+      {/* Language Toggle (top right) */}
+      <LanguageToggle />
+      
+      {/* Basemap Toggle (below language) */}
       <BasemapToggle />
       
       {/* Year Selector (below basemap toggle) */}
@@ -194,7 +210,7 @@ function LoadingOverlay() {
   const { isLoadingData } = useAppStore();
   
   if (!isLoadingData) return null;
-  
+
   return (
     <div
       style={{

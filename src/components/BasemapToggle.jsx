@@ -1,4 +1,5 @@
 import useAppStore from '../state/useAppStore';
+import { t } from '../i18n';
 
 /**
  * Toggle between Dark Streets and Bright basemap styles
@@ -12,7 +13,7 @@ export default function BasemapToggle() {
     <div
       style={{
         position: 'absolute',
-        top: 16,
+        top: 70,
         right: 16,
         zIndex: 10,
         background: 'rgba(255, 255, 255, 0.95)',
@@ -25,7 +26,7 @@ export default function BasemapToggle() {
       }}
     >
       <div style={{ fontWeight: 600, marginBottom: 8, color: '#374151' }}>
-        Basemap
+        {t('basemap')}
       </div>
       <div style={{ display: 'flex', gap: 8 }}>
         <button
@@ -43,7 +44,7 @@ export default function BasemapToggle() {
           }}
           aria-pressed={isDark}
         >
-          Dark Streets
+          {t('dark_streets')}
         </button>
         <button
           onClick={() => setBasemapStyle('bright')}
@@ -60,7 +61,7 @@ export default function BasemapToggle() {
           }}
           aria-pressed={!isDark}
         >
-          Bright
+          {t('bright')}
         </button>
       </div>
     </div>
