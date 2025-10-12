@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "build:vercel": "vite build --config vite.config.vercel.ts",
+    "build:vercel": "vite -c vite.config.vercel.ts build",
     "preview": "vite preview",
     "postbuild": "cp dist/index.html dist/404.html",
     "deploy:prod": "vercel deploy --prod --force --yes"

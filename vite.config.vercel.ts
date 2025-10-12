@@ -2,9 +2,10 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
 export default defineConfig({
+  base: "/", // IMPORTANT for Vercel
   plugins: [react()],
-  base: "/", // Vercel serves from root
   build: {
-    chunkSizeWarningLimit: 1500, // Silence chunk size warnings for production
+    outDir: "dist",
+    chunkSizeWarningLimit: 1500,
   },
 });
