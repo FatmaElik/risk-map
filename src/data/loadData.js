@@ -19,14 +19,25 @@ function showToast(message, type = 'info') {
 }
 
 /**
- * Safe fetch with better error messages
+ * Safe fetch with better error messages and logging
  */
 async function safeFetch(path) {
   const url = dataUrl(path);
+  console.debug('[safeFetch] Fetching:', url);
+  
   const response = await fetch(url);
+  
   if (!response.ok) {
-    throw new Error(`HTTP ${response.status} for ${url}`);
+    const errorMsg = `Fetch failed ${response.status} ${response.statusText} for ${url}`;
+    console.error('❌ [safeFetch]', {
+      url,
+      status: response.status,
+      statusText: response.statusText,
+    });
+    throw new Error(errorMsg);
   }
+  
+  console.debug('[safeFetch] Success:', url, response.status);
   return response;
 }
 

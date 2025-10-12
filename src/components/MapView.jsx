@@ -6,12 +6,7 @@ import { getBins } from '../data/bins';
 import { getColorExpression, getColorRamp } from '../utils/color';
 import { getBounds, ensureWGS84, mergeFC } from '../utils/spatial';
 import { formatMetric, getMetricLabel } from '../utils/format';
-
-const MAPTILER_KEY = import.meta.env.VITE_MAPTILER_KEY || '';
-
-if (!MAPTILER_KEY) {
-  console.error('⚠️ VITE_MAPTILER_KEY is not set in .env file!');
-}
+import { MAPTILER_KEY } from '../lib/env';
 
 /**
  * Main MapLibre map view with polygon layers, popups, and highlighting
@@ -46,6 +41,20 @@ export default function MapView() {
   // Initialize map
   useEffect(() => {
     if (!mapDivRef.current) return;
+    
+    // Guard: Check if MAPTILER_KEY is available
+    if (!MAPTILER_KEY) {
+      console.error('❌ VITE_MAPTILER_KEY is missing');
+      // Show visible banner
+      const errorBanner = document.createElement('div');
+      errorBanner.style.cssText = 'position:fixed;top:8px;left:8px;padding:10px 12px;background:#fee;border:1px solid #f99;border-radius:8px;z-index:99999;font:14px/1.4 system-ui;color:#c00;';
+      errorBanner.textContent = 'Map could not load: VITE_MAPTILER_KEY is missing in Production.';
+      document.body.appendChild(errorBanner);
+      // Skip map creation to avoid crash
+      return () => {
+        document.body.removeChild(errorBanner);
+      };
+    }
     
     // Turkey bounds to prevent zooming outside Turkey
     const TURKEY_BOUNDS = [[25.0, 35.5], [45.0, 42.5]];
