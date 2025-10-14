@@ -280,7 +280,7 @@ export default function ScatterPanel() {
           {t('scatter_plot')}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#6B7280', fontSize: 11 }}>
-          <span>{scatterData.length} {t('neighborhoods')}</span>
+          <span>{t('neighborhoods_count').replace('{{count}}', scatterData.length)}</span>
           {isOpen ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
         </div>
       </div>
@@ -292,16 +292,16 @@ export default function ScatterPanel() {
       {/* Header with metric selectors */}
       <div style={{ marginBottom: 12 }}>
         <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 10, color: '#374151' }}>
-          Scatter Plot
+          {t('scatter_plot')}
           <span style={{ fontSize: 11, color: '#9CA3AF', fontWeight: 400, marginLeft: 8 }}>
-            ({scatterData.length} neighborhoods)
+            ({t('neighborhoods_count').replace('{{count}}', scatterData.length)})
           </span>
         </div>
         
         <div style={{ display: 'flex', gap: 12, fontSize: 12 }}>
           <div style={{ flex: 1 }}>
             <UiSelect
-              label="X Axis"
+              label={t('x_axis')}
               options={metrics.map(m => ({ label: getMetricLabel(m), value: m }))}
               value={scatterXMetric}
               onChange={setScatterXMetric}
@@ -310,7 +310,7 @@ export default function ScatterPanel() {
           
           <div style={{ flex: 1 }}>
             <UiSelect
-              label="Y Axis"
+              label={t('y_axis')}
               options={metrics.map(m => ({ label: getMetricLabel(m), value: m }))}
               value={scatterYMetric}
               onChange={setScatterYMetric}
@@ -377,7 +377,7 @@ export default function ScatterPanel() {
               fontSize: 9,
               opacity: 0.7,
             }}>
-              Click to select
+              {t('click_to_select')}
             </div>
           </div>
         )}
@@ -393,7 +393,7 @@ export default function ScatterPanel() {
           color: '#9CA3AF',
           fontSize: 12,
         }}>
-          No data available for selected filters
+          {t('no_districts_found')}
         </div>
       )}
       </div>

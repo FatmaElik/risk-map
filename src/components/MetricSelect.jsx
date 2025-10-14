@@ -2,15 +2,15 @@ import useAppStore from '../state/useAppStore';
 import UiSelect from './ui/UiSelect';
 import { t } from '../i18n';
 
-const metricOptions = [
-  { label: "Risk Score", value: "risk_score" },
-  { label: "VS30 (m/s)", value: "vs30_mean" },
-  { label: "Population", value: "toplam_nufus" },
-  { label: "Building Count", value: "toplam_bina" },
-  { label: "PGA Scenario MW 7.2", value: "pga_scenario_mw72" },
-  { label: "PGA Scenario MW 7.5", value: "pga_scenario_mw75" },
-  { label: "ML Risk Score", value: "ml_risk_score" },
-  { label: "ML Predicted Class", value: "ml_predicted_class" },
+const getMetricOptions = () => [
+  { label: t('risk_score'), value: "risk_score" },
+  { label: t('vs30'), value: "vs30_mean" },
+  { label: t('population'), value: "toplam_nufus" },
+  { label: t('building_count'), value: "toplam_bina" },
+  { label: t('pga_scenario_mw72'), value: "pga_scenario_mw72" },
+  { label: t('pga_scenario_mw75'), value: "pga_scenario_mw75" },
+  { label: t('ml_risk_score'), value: "ml_risk_score" },
+  { label: t('ml_predicted_class'), value: "ml_predicted_class" },
 ];
 
 /**
@@ -23,7 +23,7 @@ export default function MetricSelect() {
   return (
     <div className="space-y-2">
       <UiSelect
-        options={metricOptions}
+        options={getMetricOptions()}
         value={choroplethMetric}
         onChange={setChoroplethMetric}
         aria-label={t('metric')}

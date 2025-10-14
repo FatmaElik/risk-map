@@ -8,13 +8,40 @@ const translations = {
 };
 
 /**
+ * Get current locale
+ * @returns {string} - Current locale ('tr' or 'en')
+ */
+export function getLocale() {
+  return useAppStore.getState().locale || 'tr';
+}
+
+/**
+ * Set locale and persist to localStorage
+ * @param {string} locale - Locale to set ('tr' or 'en')
+ */
+export function setLocale(locale) {
+  localStorage.setItem('locale', locale);
+  useAppStore.getState().setLocale(locale);
+}
+
+/**
  * Simple i18n translation function
  * @param {string} key - Translation key
  * @returns {string} - Translated text
  */
 export function t(key) {
-  const locale = useAppStore.getState().locale || 'tr';
+  const locale = getLocale();
   return translations[locale]?.[key] || key;
+}
+
+/**
+ * Format number according to locale
+ * @param {number} n - Number to format
+ * @param {string} locale - Locale to use (optional)
+ * @returns {string} - Formatted number
+ */
+export function formatNumber(n, locale = getLocale()) {
+  return new Intl.NumberFormat(locale).format(n ?? 0);
 }
 
 /**

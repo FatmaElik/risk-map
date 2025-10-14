@@ -37,6 +37,26 @@
   "y_axis": "Y Ekseni",
   "collapse": "Daralt",
   "expand": "Genişlet",
-  "na": "Veri Yok"
+  "na": "Veri Yok",
+  "cities": "Şehirler",
+  "districts": "İlçeler",
+  "search_districts": "İlçe ara…",
+  "select_all": "Tümünü Seç",
+  "clear_all": "Tümünü Temizle",
+  "selected": "seçili",
+  "no_districts_found": "İlçe bulunamadı",
+  "basemap_style": "Harita Stili",
+  "light": "Aydınlık",
+  "neighborhoods_count": "{{count}} mahalle",
+  "select": "Seç",
+  "zoom": "Yakınlaş",
+  "legend_title": "Risk Skoru",
+  "pga_scenario_mw72": "PGA Senaryo MW 7.2",
+  "pga_scenario_mw75": "PGA Senaryo MW 7.5",
+  "ml_risk_score": "ML Risk Skoru",
+  "ml_predicted_class": "ML Tahmin Sınıfı",
+  "earthquake_scenarios": "DEPREM SENARYOLARI",
+  "ml_prediction": "ML TAHMİNİ",
+  "click_to_select": "Seçmek için tıklayın"
 }
 

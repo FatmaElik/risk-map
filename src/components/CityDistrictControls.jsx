@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import useAppStore from '../state/useAppStore';
+import { t } from '../i18n';
 
 /**
  * City toggle and district multi-select filter
@@ -65,10 +66,12 @@ export default function CityDistrictControls() {
       {/* City Toggle */}
       <div style={{ marginBottom: 12 }}>
         <div style={{ fontWeight: 600, marginBottom: 8, color: '#374151' }}>
-          Cities
+          {t('cities')}
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          {['Istanbul', 'Ankara'].map(city => (
+          {['Istanbul', 'Ankara'].map(city => {
+          const cityKey = city.toLowerCase();
+          return (
             <button
               key={city}
               onClick={() => toggleCity(city)}
@@ -85,9 +88,10 @@ export default function CityDistrictControls() {
               }}
               aria-pressed={selectedCities.includes(city)}
             >
-              {city}
+              {t(cityKey)}
             </button>
-          ))}
+          );
+        })}
         </div>
       </div>
       
@@ -100,7 +104,7 @@ export default function CityDistrictControls() {
           marginBottom: 8,
         }}>
           <div style={{ fontWeight: 600, color: '#374151' }}>
-            Districts
+            {t('districts')}
             {hasSelection && (
               <span style={{ 
                 marginLeft: 6, 
@@ -108,7 +112,7 @@ export default function CityDistrictControls() {
                 color: '#6B7280',
                 fontWeight: 400,
               }}>
-                ({selectedDistricts.length} selected)
+                ({selectedDistricts.length} {t('selected')})
               </span>
             )}
           </div>
@@ -132,7 +136,7 @@ export default function CityDistrictControls() {
             {/* Search */}
             <input
               type="text"
-              placeholder="Search districts..."
+              placeholder={t('search_districts')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               style={{
@@ -160,7 +164,7 @@ export default function CityDistrictControls() {
                   textDecoration: 'underline',
                 }}
               >
-                {isAllSelected ? 'Clear All' : 'Select All'}
+                {isAllSelected ? t('clear_all') : t('select_all')}
               </button>
             </div>
             
@@ -179,7 +183,7 @@ export default function CityDistrictControls() {
                   fontSize: 11,
                   padding: 8,
                 }}>
-                  No districts found
+                  {t('no_districts_found')}
                 </div>
               ) : (
                 filteredDistricts.map(district => (

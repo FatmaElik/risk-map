@@ -1,4 +1,5 @@
 import useAppStore from '../state/useAppStore';
+import { setLocale } from '../i18n';
 
 /**
  * Language toggle component (TR/EN)

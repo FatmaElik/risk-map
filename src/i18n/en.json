@@ -37,6 +37,26 @@
   "y_axis": "Y Axis",
   "collapse": "Collapse",
   "expand": "Expand",
-  "na": "N/A"
+  "na": "N/A",
+  "cities": "Cities",
+  "districts": "Districts",
+  "search_districts": "Search districts…",
+  "select_all": "Select All",
+  "clear_all": "Clear All",
+  "selected": "selected",
+  "no_districts_found": "No districts found",
+  "basemap_style": "Basemap Style",
+  "light": "Light",
+  "neighborhoods_count": "{{count}} neighborhoods",
+  "select": "Select",
+  "zoom": "Zoom",
+  "legend_title": "Risk Score",
+  "pga_scenario_mw72": "PGA Scenario MW 7.2",
+  "pga_scenario_mw75": "PGA Scenario MW 7.5",
+  "ml_risk_score": "ML Risk Score",
+  "ml_predicted_class": "ML Predicted Class",
+  "earthquake_scenarios": "EARTHQUAKE SCENARIOS",
+  "ml_prediction": "ML PREDICTION",
+  "click_to_select": "Click to select"
 }
 

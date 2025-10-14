@@ -1,4 +1,5 @@
 import useAppStore from '../state/useAppStore';
+import { t } from '../i18n';
 
 /**
  * Year selector for switching between 2025 and 2026 datasets
@@ -21,7 +22,7 @@ export default function YearSelect() {
       }}
     >
       <div style={{ fontWeight: 600, marginBottom: 8, color: '#374151' }}>
-        Year
+        {t('year')}
       </div>
       <div style={{ display: 'flex', gap: 8 }}>
         {years.map(year => (

@@ -72,7 +72,7 @@ export default function MetricLegend() {
       }}
     >
       <div style={{ fontWeight: 600, marginBottom: 10, color: '#374151' }}>
-        {getMetricLabel(metric)}
+        {metric === 'risk_score' ? t('legend_title') : getMetricLabel(metric)}
       </div>
       
       {legend.map((item, idx) => (
