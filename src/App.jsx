@@ -167,36 +167,28 @@ export default function App() {
       {/* Map View */}
       <MapView />
       
-      {/* Language Toggle (top right) */}
-      <LanguageToggle />
-      
-      {/* Basemap Toggle (below language) */}
-      <BasemapToggle />
-      
-      {/* Year Selector (below basemap toggle) */}
-      <YearSelect />
-      
-      {/* Metric Selector (below year) */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 176,
-          right: 16,
-          width: 180,
-          zIndex: 10,
-          background: 'rgba(255, 255, 255, 0.95)',
-          backdropFilter: 'blur(4px)',
-          borderRadius: 12,
-          padding: '12px',
-          boxShadow: '0 2px 12px rgba(0, 0, 0, 0.15)',
-          fontFamily: 'system-ui, -apple-system, sans-serif',
-          fontSize: 13,
-        }}
-      >
-        <div style={{ fontWeight: 600, marginBottom: 8, color: '#374151' }}>
-          Metric
+      {/* Sağ üst kontrol grubu */}
+      <div className="controls-stack">
+        <LanguageToggle />
+        <BasemapToggle />
+        <YearSelect />
+        <div
+          style={{
+            background: 'rgba(255, 255, 255, 0.95)',
+            backdropFilter: 'blur(4px)',
+            borderRadius: 12,
+            padding: '12px',
+            boxShadow: '0 2px 12px rgba(0, 0, 0, 0.15)',
+            fontFamily: 'system-ui, -apple-system, sans-serif',
+            fontSize: 13,
+            width: 180,
+          }}
+        >
+          <div style={{ fontWeight: 600, marginBottom: 8, color: '#374151' }}>
+            Metric
+          </div>
+          <MetricSelect />
         </div>
-        <MetricSelect />
       </div>
       
       {/* City & District Controls (top left) */}

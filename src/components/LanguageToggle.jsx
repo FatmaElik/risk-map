@@ -13,10 +13,6 @@ export default function LanguageToggle() {
   return (
     <div
       style={{
-        position: 'absolute',
-        top: 16,
-        right: 16,
-        zIndex: 10,
         background: 'rgba(255, 255, 255, 0.95)',
         backdropFilter: 'blur(4px)',
         borderRadius: 12,

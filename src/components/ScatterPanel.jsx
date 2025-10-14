@@ -247,25 +247,22 @@ export default function ScatterPanel() {
   const metrics = ['risk_score', 'vs30_mean', 'population', 'building_count'];
   
   return (
-    <div
-      style={{
-        position: 'absolute',
-        bottom: 16,
-        left: 16,
-        width: 480,
-        maxWidth: 'calc(100vw - 32px)',
-        height: isOpen ? 320 : 'auto',
-        background: 'rgba(255, 255, 255, 0.95)',
-        backdropFilter: 'blur(4px)',
-        borderRadius: 12,
-        padding: isOpen ? 16 : 0,
-        boxShadow: '0 2px 12px rgba(0, 0, 0, 0.15)',
-        fontFamily: 'system-ui, -apple-system, sans-serif',
-        display: 'flex',
-        flexDirection: 'column',
-        zIndex: 10,
-      }}
-    >
+    <div className="scatter-dock scatter-bl">
+      <div
+        style={{
+          width: 480,
+          maxWidth: 'calc(100vw - 32px)',
+          height: isOpen ? 320 : 'auto',
+          background: 'rgba(255, 255, 255, 0.95)',
+          backdropFilter: 'blur(4px)',
+          borderRadius: 12,
+          padding: isOpen ? 16 : 0,
+          boxShadow: '0 2px 12px rgba(0, 0, 0, 0.15)',
+          fontFamily: 'system-ui, -apple-system, sans-serif',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
       {/* Collapsible Header */}
       <div
         onClick={() => setUiFlag('scatterOpen', !isOpen)}
@@ -289,7 +286,7 @@ export default function ScatterPanel() {
       
       {/* Collapsible Content */}
       {isOpen && (
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <div className="scatter-body" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
 
       {/* Header with metric selectors */}
       <div style={{ marginBottom: 12 }}>
@@ -400,6 +397,7 @@ export default function ScatterPanel() {
       )}
       </div>
       )}
+      </div>
     </div>
   );
 }
