@@ -11,7 +11,7 @@ export const COLOR_RAMPS = {
     '#EF4444', // red
     '#991B1B', // dark red
   ],
-  
+
   vs30_mean: [
     '#DBEAFE', // pale blue
     '#93C5FD', // light blue
@@ -19,7 +19,7 @@ export const COLOR_RAMPS = {
     '#1D4ED8', // dark blue
     '#1E3A8A', // very dark blue
   ],
-  
+
   population: [
     '#CCFBF1', // pale teal
     '#5EEAD4', // light teal
@@ -27,13 +27,61 @@ export const COLOR_RAMPS = {
     '#0F766E', // dark teal
     '#134E4A', // very dark teal
   ],
-  
+
+  toplam_nufus: [
+    '#CCFBF1', // pale teal
+    '#5EEAD4', // light teal
+    '#14B8A6', // teal
+    '#0F766E', // dark teal
+    '#134E4A', // very dark teal
+  ],
+
   building_count: [
     '#E9D5FF', // pale purple
     '#C084FC', // light purple
     '#9333EA', // purple
     '#7E22CE', // dark purple
     '#581C87', // very dark purple
+  ],
+
+  toplam_bina: [
+    '#E9D5FF', // pale purple
+    '#C084FC', // light purple
+    '#9333EA', // purple
+    '#7E22CE', // dark purple
+    '#581C87', // very dark purple
+  ],
+
+  pga_scenario_mw72: [
+    '#FEF3C7', // pale yellow
+    '#FCD34D', // amber
+    '#F59E0B', // orange
+    '#EF4444', // red
+    '#991B1B', // dark red
+  ],
+
+  pga_scenario_mw75: [
+    '#FEF3C7', // pale yellow
+    '#FCD34D', // amber
+    '#F59E0B', // orange
+    '#DC2626', // red
+    '#7F1D1D', // very dark red
+  ],
+
+  ml_risk_score: [
+    '#D1FAE5', // pale green
+    '#A7F3D0', // light green
+    '#FCD34D', // amber
+    '#F59E0B', // orange
+    '#DC2626', // red
+  ],
+
+  ml_predicted_class: [
+    '#10B981', // green (class 1 - low risk)
+    '#FBBF24', // yellow (class 2)
+    '#F59E0B', // orange (class 3)
+    '#EF4444', // red (class 4)
+    '#991B1B', // dark red (class 5 - high risk)
   ],
 };
 

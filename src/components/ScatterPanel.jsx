@@ -8,6 +8,7 @@ import { getColor } from '../utils/color';
 import { getBins } from '../data/bins';
 import UiSelect from './ui/UiSelect';
 import { t } from '../i18n';
+import { getRiskColor } from '../lib/riskScale';
 
 /**
  * Scatter plot panel with district filtering and neighborhood selection (collapsible)
@@ -37,6 +38,18 @@ export default function ScatterPanel() {
   const scatterData = useMemo(() => {
     const points = extractScatterData(csvData, geojsonData);
     
+    // Debug: Check risk score range
+    if (points.length > 0) {
+      const riskScores = points.map(p => p.risk_score).filter(v => Number.isFinite(v));
+      if (riskScores.length > 0) {
+        console.log('🎨 Risk score range:', {
+          min: Math.min(...riskScores),
+          max: Math.max(...riskScores),
+          count: riskScores.length
+        });
+      }
+    }
+    
     // Filter by cities
     let filtered = points;
     if (selectedCities.length < 2) {
@@ -55,15 +68,7 @@ export default function ScatterPanel() {
     );
   }, [geojsonData, csvData, scatterXMetric, scatterYMetric, selectedDistricts, selectedCities]);
   
-  // Calculate color bins (NOT affected by metric selector, only scatter axes)
-  const colorBins = useMemo(() => {
-    const values = scatterData
-      .map(p => p.risk_score)
-      .filter(v => Number.isFinite(v));
-    
-    if (values.length === 0) return null;
-    return getBins(values);
-  }, [scatterData]);
+  // Color bins no longer needed - using centralized risk scale
   
   // Render scatter plot
   useEffect(() => {
@@ -173,12 +178,8 @@ export default function ScatterPanel() {
       const x = xScale(point[scatterXMetric]);
       const y = yScale(point[scatterYMetric]);
       
-      // Get color based on risk_score (fixed, not affected by metric selector)
-      let color = '#3B82F6';
-      if (colorBins) {
-        const colorRamp = ['#FEF3C7', '#FCD34D', '#F59E0B', '#EF4444', '#991B1B'];
-        color = getColor(point.risk_score, colorBins, colorRamp);
-      }
+      // Get color based on risk_score using centralized scale
+      const color = getRiskColor(point.risk_score);
       
       ctx.fillStyle = color;
       ctx.strokeStyle = '#FFFFFF';
@@ -195,7 +196,7 @@ export default function ScatterPanel() {
       point._idx = idx;
     });
     
-  }, [scatterData, scatterXMetric, scatterYMetric, colorBins]);
+  }, [scatterData, scatterXMetric, scatterYMetric]);
   
   // Handle mouse move for tooltip
   const handleMouseMove = (e) => {
@@ -247,25 +248,22 @@ export default function ScatterPanel() {
   const metrics = ['risk_score', 'vs30_mean', 'population', 'building_count'];
   
   return (
-    <div
-      style={{
-        position: 'absolute',
-        bottom: 16,
-        left: 16,
-        width: 480,
-        maxWidth: 'calc(100vw - 32px)',
-        height: isOpen ? 320 : 'auto',
-        background: 'rgba(255, 255, 255, 0.95)',
-        backdropFilter: 'blur(4px)',
-        borderRadius: 12,
-        padding: isOpen ? 16 : 0,
-        boxShadow: '0 2px 12px rgba(0, 0, 0, 0.15)',
-        fontFamily: 'system-ui, -apple-system, sans-serif',
-        display: 'flex',
-        flexDirection: 'column',
-        zIndex: 10,
-      }}
-    >
+    <div className="scatter-dock scatter-bl">
+      <div
+        style={{
+          width: 480,
+          maxWidth: 'calc(100vw - 32px)',
+          height: isOpen ? 320 : 'auto',
+          background: 'rgba(255, 255, 255, 0.95)',
+          backdropFilter: 'blur(4px)',
+          borderRadius: 12,
+          padding: isOpen ? 16 : 0,
+          boxShadow: '0 2px 12px rgba(0, 0, 0, 0.15)',
+          fontFamily: 'system-ui, -apple-system, sans-serif',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
       {/* Collapsible Header */}
       <div
         onClick={() => setUiFlag('scatterOpen', !isOpen)}
@@ -289,7 +287,7 @@ export default function ScatterPanel() {
       
       {/* Collapsible Content */}
       {isOpen && (
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <div className="scatter-body" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
 
       {/* Header with metric selectors */}
       <div style={{ marginBottom: 12 }}>
@@ -400,6 +398,7 @@ export default function ScatterPanel() {
       )}
       </div>
       )}
+      </div>
     </div>
   );
 }

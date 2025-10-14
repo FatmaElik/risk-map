@@ -11,10 +11,6 @@ export default function YearSelect() {
   return (
     <div
       style={{
-        position: 'absolute',
-        top: 96,
-        right: 16,
-        zIndex: 10,
         background: 'rgba(255, 255, 255, 0.95)',
         backdropFilter: 'blur(4px)',
         borderRadius: 12,

@@ -9,6 +9,7 @@ import { formatMetric, getMetricLabel } from '../utils/format';
 import { MAPTILER_KEY } from '../lib/env';
 import { t, getRiskLabel } from '../i18n';
 import { normalizeBbox, TR_FALLBACK_BBOX } from '../data/loadData';
+import { RISK_BINS, RISK_COLORS, getRiskClass, RISK_LABELS_TR, RISK_LABELS_EN } from '../lib/riskScale';
 
 /**
  * Safe fitBounds with bbox normalization and Turkey fallback
@@ -347,7 +348,16 @@ export default function MapView() {
         type: 'fill',
         source: 'neighborhoods',
         paint: {
-          'fill-color': '#CCCCCC',
+          // 5 sınıflı sabit step ifadesi (risk_score özelliğine göre)
+          'fill-color': [
+            'step',
+            ['coalesce', ['get','risk_score'], 0],
+            RISK_COLORS[0],
+            RISK_BINS[1], RISK_COLORS[1],
+            RISK_BINS[2], RISK_COLORS[2],
+            RISK_BINS[3], RISK_COLORS[3],
+            RISK_BINS[4], RISK_COLORS[4],
+          ],
           'fill-opacity': [
             'case',
             ['boolean', ['feature-state', 'hover'], false],
@@ -429,8 +439,13 @@ export default function MapView() {
       const population = props.toplam_nufus || props.population;
       const buildingCount = props.toplam_bina || props.building_count;
       const riskScore = props.risk_score;
-      const riskLabel = getRiskLabel(riskScore, locale);
-      
+      const riskClass = getRiskClass(riskScore);
+      const riskLabel = (locale === 'tr' ? RISK_LABELS_TR : RISK_LABELS_EN)[riskClass];
+      const pgaMW72 = props.pga_scenario_mw72;
+      const pgaMW75 = props.pga_scenario_mw75;
+      const mlRiskScore = props.ml_risk_score;
+      const mlPredictedClass = props.ml_predicted_class;
+
       const html = `
         <div style="font-family: system-ui, sans-serif; font-size: 13px;">
           <div style="font-weight: 700; font-size: 14px; margin-bottom: 6px; color: #1F2937;">
@@ -441,14 +456,44 @@ export default function MapView() {
           </div>
           <div style="display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 12px;">
             <span style="color: #6B7280;">${t('risk_label')}:</span>
-            <span style="font-weight: 600; color: #DC2626;">${riskLabel}</span>
-            
+            <span style="font-weight: 600; color: #DC2626; background: ${RISK_COLORS[riskClass]}; padding: 2px 6px; border-radius: 4px; color: white;">${riskLabel}</span>
+
             <span style="color: #6B7280;">${t('population')}:</span>
             <span style="font-weight: 600; color: #374151;">${formatMetric('population', population)}</span>
-            
+
             <span style="color: #6B7280;">${t('building_count')}:</span>
             <span style="font-weight: 600; color: #374151;">${formatMetric('building_count', buildingCount)}</span>
           </div>
+          ${pgaMW72 || pgaMW75 ? `
+          <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #E5E7EB;">
+            <div style="font-weight: 600; font-size: 11px; color: #6B7280; margin-bottom: 6px;">EARTHQUAKE SCENARIOS</div>
+            <div style="display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 11px;">
+              ${pgaMW72 ? `
+                <span style="color: #6B7280;">PGA MW 7.2:</span>
+                <span style="font-weight: 600; color: #F59E0B;">${pgaMW72.toFixed(3)}g</span>
+              ` : ''}
+              ${pgaMW75 ? `
+                <span style="color: #6B7280;">PGA MW 7.5:</span>
+                <span style="font-weight: 600; color: #DC2626;">${pgaMW75.toFixed(3)}g</span>
+              ` : ''}
+            </div>
+          </div>
+          ` : ''}
+          ${mlRiskScore || mlPredictedClass ? `
+          <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #E5E7EB;">
+            <div style="font-weight: 600; font-size: 11px; color: #6B7280; margin-bottom: 6px;">ML PREDICTION</div>
+            <div style="display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 11px;">
+              ${mlRiskScore ? `
+                <span style="color: #6B7280;">ML Risk Score:</span>
+                <span style="font-weight: 600; color: #DC2626;">${mlRiskScore.toFixed(2)}</span>
+              ` : ''}
+              ${mlPredictedClass ? `
+                <span style="color: #6B7280;">Predicted Class:</span>
+                <span style="font-weight: 600; color: #374151;">${mlPredictedClass}</span>
+              ` : ''}
+            </div>
+          </div>
+          ` : ''}
           <div style="margin-top: 12px; display: flex; gap: 8px;">
             <button
               onclick="window.selectNeighborhood('${props.mah_id}')"

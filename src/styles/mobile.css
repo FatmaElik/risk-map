@@ -1,3 +1,92 @@
+/* Global CSS variables for consistent layout */
+:root {
+  --sidebar-w: 280px;     /* sol şehir/ilçe paneli genişliği */
+  --pad: 16px;            /* genel iç kenar boşluğu */
+  --gap: 12px;            /* overlay kartlar arası boşluk */
+}
+
+/* Sağ üstteki kontrol kartlarını dikey istifle */
+.controls-stack {
+  position: fixed !important;
+  right: 16px !important;
+  top: 92px !important;       /* navbar altında güvenli */
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 12px !important;
+  width: 260px;               /* kart genişliklerine uy */
+  z-index: 12 !important;
+  pointer-events: auto;
+}
+.controls-stack > * {
+  pointer-events: auto;       /* iç kartlar tıklanabilir */
+}
+
+/* Alt sağdaki MapLibre legend/ctrl'leri scatter'dan uzak tut */
+.maplibregl-ctrl-bottom-right {
+  margin-right: var(--pad) !important;
+  margin-bottom: calc(120px + var(--pad)) !important; /* scatter'ın üstünde kalsın */
+}
+
+/* MapLibre kontrollerine konfor boşluğu */
+.maplibregl-ctrl-bottom-right {
+  margin-right: 16px !important;
+  margin-bottom: 16px !important;
+}
+
+/* (Opsiyonel) Legend sabitse küçük bir offset verilebilir; kendi sınıfın varsa kullan */
+.legend-dock,
+.map-legend {
+  right: 16px;
+  bottom: 96px; /* zoom'un üstü */
+}
+
+/* ==== Dock helpers ===================================================== */
+/* Scatter: SOL-ALT, legend ve zoom'dan uzak */
+.scatter-dock {
+  position: fixed !important;
+  z-index: 15 !important;
+  max-width: 740px;
+  pointer-events: auto;
+}
+@media (min-width: 1100px) {
+  .scatter-dock.scatter-bl {
+    left: 16px !important;
+    bottom: 16px !important;
+    right: auto !important;
+    top: auto !important;
+  }
+}
+@media (max-width: 1100px) {
+  .scatter-dock {
+    left: 12px !important;
+    right: 12px !important;
+    bottom: 120px !important; /* zoom+legend için boşluk */
+  }
+}
+
+/* MapLibre kontrol ve legend için konfor boşluğu */
+.maplibregl-ctrl-bottom-right { margin-right: 16px !important; margin-bottom: 16px !important; }
+/* Eğer legend'e özel class varsa bunu da koruyun: */
+.legend-dock, .map-legend { right: 16px; bottom: 96px; }
+
+/* Cities/Districts sol paneli ile scatter çakışmasını engelle */
+.left-panel { z-index: 20 !important; }
+
+/* Responsive adjustments */
+@media (max-width: 1100px) {
+  .controls-stack { 
+    right: 12px !important; 
+    top: 88px !important; 
+    width: min(92vw, 320px); 
+  }
+}
+
+/* Kart gövdesi: içerik taşmasın, kaydırılabilsin */
+.scatter-body {
+  max-height: min(46vh, 520px);
+  overflow: auto;
+}
+
 /* Mobile-friendly responsive styles */
 
 @media (max-width: 768px) {
@@ -17,6 +106,17 @@
   .scatter-panel {
     width: calc(100vw - 32px) !important;
     max-width: 420px;
+  }
+  
+  /* Mobilde scatter tam genişlik kullan */
+  .scatter-dock {
+    left: var(--pad);
+    right: var(--pad);
+    max-width: none;
+  }
+  
+  .maplibregl-ctrl-bottom-right {
+    margin-bottom: calc(160px + var(--pad)) !important; /* mobile'da daha fazla boşluk */
   }
   
   /* Adjust legend position */

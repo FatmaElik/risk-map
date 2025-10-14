@@ -5,8 +5,12 @@ import { t } from '../i18n';
 const metricOptions = [
   { label: "Risk Score", value: "risk_score" },
   { label: "VS30 (m/s)", value: "vs30_mean" },
-  { label: "Population", value: "population" },
-  { label: "Building Count", value: "building_count" },
+  { label: "Population", value: "toplam_nufus" },
+  { label: "Building Count", value: "toplam_bina" },
+  { label: "PGA Scenario MW 7.2", value: "pga_scenario_mw72" },
+  { label: "PGA Scenario MW 7.5", value: "pga_scenario_mw75" },
+  { label: "ML Risk Score", value: "ml_risk_score" },
+  { label: "ML Predicted Class", value: "ml_predicted_class" },
 ];
 
 /**

@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import useAppStore from './state/useAppStore';
 import { loadGeoJSONs, loadCSV, joinCsvToGeojson, bboxFromFeatureCollection, combineBbox } from './data/loadData';
 import { ensureWGS84, mergeFC } from './utils/spatial';
-import { BOUNDARIES } from './data/config.geo';
+import { BOUNDARIES, NEIGHBORHOODS, RISK_CSV, asset } from './data/config.geo';
 import MapView from './components/MapView';
 import BasemapToggle from './components/BasemapToggle';
 import YearSelect from './components/YearSelect';
@@ -54,14 +54,14 @@ export default function App() {
         // Load district boundaries
         const districtBoundaries = await loadGeoJSONs(districtPaths);
         
-        // Fallback to old paths for neighborhoods
+        // Load neighborhoods using centralized config
         let geojson = await loadGeoJSONs([
-          'data/ankara_mahalle_risk.geojson',
-          'data/istanbul_mahalle_risk.geojson',
+          NEIGHBORHOODS.ankara,
+          NEIGHBORHOODS.istanbul,
         ]);
         
         // Load CSV data for selected year
-        const csvPath = `data/risk/${selectedYear}.csv`;
+        const csvPath = RISK_CSV[selectedYear] || asset(`data/risk/${selectedYear}.csv`);
         const csv = await loadCSV(csvPath);
         
         if (isCancelled) return;
@@ -167,36 +167,28 @@ export default function App() {
       {/* Map View */}
       <MapView />
       
-      {/* Language Toggle (top right) */}
-      <LanguageToggle />
-      
-      {/* Basemap Toggle (below language) */}
-      <BasemapToggle />
-      
-      {/* Year Selector (below basemap toggle) */}
-      <YearSelect />
-      
-      {/* Metric Selector (below year) */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 176,
-          right: 16,
-          width: 180,
-          zIndex: 10,
-          background: 'rgba(255, 255, 255, 0.95)',
-          backdropFilter: 'blur(4px)',
-          borderRadius: 12,
-          padding: '12px',
-          boxShadow: '0 2px 12px rgba(0, 0, 0, 0.15)',
-          fontFamily: 'system-ui, -apple-system, sans-serif',
-          fontSize: 13,
-        }}
-      >
-        <div style={{ fontWeight: 600, marginBottom: 8, color: '#374151' }}>
-          Metric
+      {/* Sağ üst kontrol grubu */}
+      <div className="controls-stack">
+        <LanguageToggle />
+        <BasemapToggle />
+        <YearSelect />
+        <div
+          style={{
+            background: 'rgba(255, 255, 255, 0.95)',
+            backdropFilter: 'blur(4px)',
+            borderRadius: 12,
+            padding: '12px',
+            boxShadow: '0 2px 12px rgba(0, 0, 0, 0.15)',
+            fontFamily: 'system-ui, -apple-system, sans-serif',
+            fontSize: 13,
+            width: 180,
+          }}
+        >
+          <div style={{ fontWeight: 600, marginBottom: 8, color: '#374151' }}>
+            Metric
+          </div>
+          <MetricSelect />
         </div>
-        <MetricSelect />
       </div>
       
       {/* City & District Controls (top left) */}

@@ -3,17 +3,29 @@ import { getBins, getLegend } from '../data/bins';
 import { getColorRamp } from '../utils/color';
 import { formatNumber, getMetricLabel } from '../utils/format';
 import useAppStore from '../state/useAppStore';
+import { RISK_BINS, RISK_COLORS, RISK_LABELS_TR, RISK_LABELS_EN } from '../lib/riskScale';
 
 /**
  * 5-class legend for the current choropleth metric
  */
 export default function MetricLegend() {
-  const { choroplethMetric, geojsonData } = useAppStore();
+  const { choroplethMetric, geojsonData, locale } = useAppStore();
   
-  // Calculate bins from current data
+  // Use centralized risk scale for risk_score, fallback to dynamic for other metrics
   const { bins, colors, legend, metric } = useMemo(() => {
     const metric = choroplethMetric || 'risk_score';
     
+    // For risk_score, use centralized scale
+    if (metric === 'risk_score') {
+      const labels = locale === 'tr' ? RISK_LABELS_TR : RISK_LABELS_EN;
+      const legend = RISK_COLORS.map((color, i) => ({
+        range: `${RISK_BINS[i].toFixed(2)} – ${RISK_BINS[i+1].toFixed(2)} · ${labels[i]}`,
+        color
+      }));
+      return { bins: RISK_BINS, colors: RISK_COLORS, legend, metric };
+    }
+    
+    // For other metrics, use dynamic calculation
     if (!geojsonData || !geojsonData.features) {
       return { bins: [0, 0.2, 0.4, 0.6, 0.8, 1], colors: [], legend: [], metric };
     }
@@ -37,7 +49,7 @@ export default function MetricLegend() {
     const legend = getLegend(bins, (v) => formatNumber(v, decimals));
     
     return { bins, colors, legend, metric };
-  }, [geojsonData, choroplethMetric]);
+  }, [geojsonData, choroplethMetric, locale]);
   
   if (legend.length === 0) return null;
   
@@ -77,7 +89,7 @@ export default function MetricLegend() {
               width: 24,
               height: 16,
               borderRadius: 4,
-              background: colors[idx],
+              background: item.color || colors[idx],
               border: '1px solid rgba(0, 0, 0, 0.1)',
               flexShrink: 0,
             }}

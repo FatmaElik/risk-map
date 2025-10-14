@@ -1,7 +1,8 @@
 /**
- * Helper to resolve public data paths correctly on GitHub Pages (/risk-map/) and dev (/)
+ * Helper to resolve public data paths correctly with BASE_URL
  * @param {string} p - Relative path without leading slash, e.g., "data/risk/2025.csv"
  * @returns {string} - Full URL with correct base path
+ * @deprecated Use asset() from config.geo.js instead
  */
 export function dataUrl(p) {
   // Absolute URL passthrough

@@ -46,6 +46,7 @@ export default function CityDistrictControls() {
   
   return (
     <div
+      className="left-panel"
       style={{
         position: 'absolute',
         top: 16,

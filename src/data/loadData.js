@@ -1,6 +1,6 @@
 import Papa from 'papaparse';
 import { normalizeProperties, getCityFromPath } from './fieldMap';
-import { dataUrl } from './path';
+import { asset } from './config.geo';
 import { makeKey } from './normalize';
 
 // Cache for loaded data
@@ -22,7 +22,7 @@ function showToast(message, type = 'info') {
  * Safe fetch with better error messages and logging
  */
 async function safeFetch(path) {
-  const url = dataUrl(path);
+  const url = asset(path);
   console.debug('[safeFetch] Fetching:', url);
   
   const response = await fetch(url);
