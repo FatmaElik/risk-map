@@ -114,6 +114,10 @@ const useAppStore = create((set, get) => ({
   // Available districts (computed from data)
   availableDistricts: [],
   setAvailableDistricts: (districts) => set({ availableDistricts: districts }),
+  
+  // Last popup for locale updates
+  lastPopup: null,
+  setLastPopup: (popup) => set({ lastPopup: popup }),
 }));
 
 export default useAppStore;

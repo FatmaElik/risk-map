@@ -41,7 +41,11 @@ export function t(key) {
  * @returns {string} - Formatted number
  */
 export function formatNumber(n, locale = getLocale()) {
-  return new Intl.NumberFormat(locale).format(n ?? 0);
+  try { 
+    return Number(n ?? 0).toLocaleString(locale === 'tr' ? 'tr-TR' : 'en-US'); 
+  } catch { 
+    return String(n ?? ''); 
+  }
 }
 
 /**

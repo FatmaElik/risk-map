@@ -7,9 +7,94 @@ import { getColorExpression, getColorRamp } from '../utils/color';
 import { getBounds, ensureWGS84, mergeFC } from '../utils/spatial';
 import { formatMetric, getMetricLabel } from '../utils/format';
 import { MAPTILER_KEY } from '../lib/env';
-import { t, getRiskLabel } from '../i18n';
+import { t, getRiskLabel, formatNumber } from '../i18n';
 import { normalizeBbox, TR_FALLBACK_BBOX } from '../data/loadData';
 import { RISK_BINS, RISK_COLORS, getRiskClass, RISK_LABELS_TR, RISK_LABELS_EN } from '../lib/riskScale';
+
+/**
+ * Build popup HTML with i18n support
+ */
+const buildPopupHTML = (feature, locale, t) => {
+  const props = feature?.properties ?? {};
+  const city = props.city ?? props.province ?? '';
+  const district = props.ilce_adi ?? props.district ?? '';
+  const neighborhood = props.mahalle_adi ?? props.neighborhood ?? 'Unknown';
+  const risk = Number(props.risk_score ?? props.risk ?? 0);
+  const population = props.toplam_nufus ?? props.population ?? 0;
+  const buildingCount = props.toplam_bina ?? props.building_count ?? 0;
+  const pgaMW72 = props.pga_scenario_mw72;
+  const pgaMW75 = props.pga_scenario_mw75;
+  const mlRiskScore = props.ml_risk_score;
+  const mlPredictedClass = props.ml_predicted_class;
+  
+  const riskClass = getRiskClass(risk);
+  const riskLabel = (locale === 'tr' ? RISK_LABELS_TR : RISK_LABELS_EN)[riskClass];
+
+  return `
+    <div style="font-family: system-ui, sans-serif; font-size: 13px;">
+      <div style="font-weight: 700; font-size: 14px; margin-bottom: 6px; color: #1F2937;">
+        ${neighborhood}
+      </div>
+      <div style="color: #6B7280; font-size: 11px; margin-bottom: 10px;">
+        ${district} • ${city}
+      </div>
+      <div style="display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 12px;">
+        <span style="color: #6B7280;">${t('risk_label')}:</span>
+        <span style="font-weight: 600; color: #DC2626; background: ${RISK_COLORS[riskClass]}; padding: 2px 6px; border-radius: 4px; color: white;">${riskLabel}</span>
+
+        <span style="color: #6B7280;">${t('population')}:</span>
+        <span style="font-weight: 600; color: #374151;">${formatNumber(population, locale)}</span>
+
+        <span style="color: #6B7280;">${t('building_count')}:</span>
+        <span style="font-weight: 600; color: #374151;">${formatNumber(buildingCount, locale)}</span>
+      </div>
+      ${pgaMW72 || pgaMW75 ? `
+      <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #E5E7EB;">
+        <div style="font-weight: 600; font-size: 11px; color: #6B7280; margin-bottom: 6px;">${t('earthquake_scenarios')}</div>
+        <div style="display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 11px;">
+          ${pgaMW72 ? `
+            <span style="color: #6B7280;">${t('pga_scenario_mw72')}:</span>
+            <span style="font-weight: 600; color: #F59E0B;">${pgaMW72.toFixed(3)}g</span>
+          ` : ''}
+          ${pgaMW75 ? `
+            <span style="color: #6B7280;">${t('pga_scenario_mw75')}:</span>
+            <span style="font-weight: 600; color: #DC2626;">${pgaMW75.toFixed(3)}g</span>
+          ` : ''}
+        </div>
+      </div>
+      ` : ''}
+      ${mlRiskScore || mlPredictedClass ? `
+      <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #E5E7EB;">
+        <div style="font-weight: 600; font-size: 11px; color: #6B7280; margin-bottom: 6px;">${t('ml_prediction')}</div>
+        <div style="display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 11px;">
+          ${mlRiskScore ? `
+            <span style="color: #6B7280;">${t('ml_risk_score')}:</span>
+            <span style="font-weight: 600; color: #DC2626;">${mlRiskScore.toFixed(2)}</span>
+          ` : ''}
+          ${mlPredictedClass ? `
+            <span style="color: #6B7280;">${t('ml_predicted_class')}:</span>
+            <span style="font-weight: 600; color: #374151;">${mlPredictedClass}</span>
+          ` : ''}
+        </div>
+      </div>
+      ` : ''}
+      <div style="margin-top: 12px; display: flex; gap: 8px;">
+        <button
+          onclick="window.selectNeighborhood('${props.mah_id}')"
+          style="flex: 1; padding: 6px 12px; background: #3B82F6; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600;"
+        >
+          ${t('select')}
+        </button>
+        <button
+          onclick="window.zoomToNeighborhood('${props.mah_id}')"
+          style="flex: 1; padding: 6px 12px; background: #E5E7EB; color: #374151; border: none; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600;"
+        >
+          ${t('zoom')}
+        </button>
+      </div>
+    </div>
+  `;
+};
 
 /**
  * Safe fitBounds with bbox normalization and Turkey fallback
@@ -51,6 +136,8 @@ export default function MapView() {
     selectedCities,
     bbox,
     locale,
+    lastPopup,
+    setLastPopup,
   } = useAppStore();
   
   // Get basemap style URL
@@ -331,6 +418,18 @@ export default function MapView() {
     }
   }, [selectedNeighborhood, mapLoaded]);
   
+  // Update popup when locale changes
+  useEffect(() => {
+    if (!lastPopup?.feature || !mapRef.current) return;
+    const map = mapRef.current;
+    try {
+      const html = buildPopupHTML(lastPopup.feature, locale, t);
+      popupRef.current?.setHTML(html);
+    } catch (e) {
+      console.warn('Failed to update popup HTML:', e);
+    }
+  }, [locale, lastPopup]);
+  
   // Add map layers
   const addMapLayers = (map, data) => {
     // Add source
@@ -431,90 +530,14 @@ export default function MapView() {
       const feature = e.features?.[0];
       if (!feature) return;
       
-      const props = feature.properties || {};
-      
-      const neighborhood = props.mahalle_adi || props.neighborhood || 'Unknown';
-      const district = props.ilce_adi || props.district || '—';
-      const city = props.city || '—';
-      const population = props.toplam_nufus || props.population;
-      const buildingCount = props.toplam_bina || props.building_count;
-      const riskScore = props.risk_score;
-      const riskClass = getRiskClass(riskScore);
-      const riskLabel = (locale === 'tr' ? RISK_LABELS_TR : RISK_LABELS_EN)[riskClass];
-      const pgaMW72 = props.pga_scenario_mw72;
-      const pgaMW75 = props.pga_scenario_mw75;
-      const mlRiskScore = props.ml_risk_score;
-      const mlPredictedClass = props.ml_predicted_class;
-
-      const html = `
-        <div style="font-family: system-ui, sans-serif; font-size: 13px;">
-          <div style="font-weight: 700; font-size: 14px; margin-bottom: 6px; color: #1F2937;">
-            ${neighborhood}
-          </div>
-          <div style="color: #6B7280; font-size: 11px; margin-bottom: 10px;">
-            ${district} • ${city}
-          </div>
-          <div style="display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 12px;">
-            <span style="color: #6B7280;">${t('risk_label')}:</span>
-            <span style="font-weight: 600; color: #DC2626; background: ${RISK_COLORS[riskClass]}; padding: 2px 6px; border-radius: 4px; color: white;">${riskLabel}</span>
-
-            <span style="color: #6B7280;">${t('population')}:</span>
-            <span style="font-weight: 600; color: #374151;">${formatMetric('population', population)}</span>
-
-            <span style="color: #6B7280;">${t('building_count')}:</span>
-            <span style="font-weight: 600; color: #374151;">${formatMetric('building_count', buildingCount)}</span>
-          </div>
-          ${pgaMW72 || pgaMW75 ? `
-          <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #E5E7EB;">
-             <div style="font-weight: 600; font-size: 11px; color: #6B7280; margin-bottom: 6px;">${t('earthquake_scenarios')}</div>
-            <div style="display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 11px;">
-              ${pgaMW72 ? `
-                <span style="color: #6B7280;">${t('pga_scenario_mw72')}:</span>
-                <span style="font-weight: 600; color: #F59E0B;">${pgaMW72.toFixed(3)}g</span>
-              ` : ''}
-              ${pgaMW75 ? `
-                <span style="color: #6B7280;">${t('pga_scenario_mw75')}:</span>
-                <span style="font-weight: 600; color: #DC2626;">${pgaMW75.toFixed(3)}g</span>
-              ` : ''}
-            </div>
-          </div>
-          ` : ''}
-          ${mlRiskScore || mlPredictedClass ? `
-          <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #E5E7EB;">
-             <div style="font-weight: 600; font-size: 11px; color: #6B7280; margin-bottom: 6px;">${t('ml_prediction')}</div>
-            <div style="display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 11px;">
-              ${mlRiskScore ? `
-                <span style="color: #6B7280;">${t('ml_risk_score')}:</span>
-                <span style="font-weight: 600; color: #DC2626;">${mlRiskScore.toFixed(2)}</span>
-              ` : ''}
-              ${mlPredictedClass ? `
-                <span style="color: #6B7280;">${t('ml_predicted_class')}:</span>
-                <span style="font-weight: 600; color: #374151;">${mlPredictedClass}</span>
-              ` : ''}
-            </div>
-          </div>
-          ` : ''}
-          <div style="margin-top: 12px; display: flex; gap: 8px;">
-            <button
-              onclick="window.selectNeighborhood('${props.mah_id}')"
-              style="flex: 1; padding: 6px 12px; background: #3B82F6; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600;"
-            >
-               ${t('select')}
-             </button>
-             <button
-               onclick="window.zoomToNeighborhood('${props.mah_id}')"
-               style="flex: 1; padding: 6px 12px; background: #E5E7EB; color: #374151; border: none; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600;"
-             >
-               ${t('zoom')}
-            </button>
-          </div>
-        </div>
-      `;
+      const html = buildPopupHTML(feature, locale, t);
       
       popupRef.current
         .setLngLat(e.lngLat)
         .setHTML(html)
         .addTo(map);
+        
+      setLastPopup({ lngLat: e.lngLat, feature });
     });
     
     // Hover handlers
