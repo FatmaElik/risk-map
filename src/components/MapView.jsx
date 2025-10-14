@@ -469,11 +469,11 @@ export default function MapView() {
             <div style="font-weight: 600; font-size: 11px; color: #6B7280; margin-bottom: 6px;">EARTHQUAKE SCENARIOS</div>
             <div style="display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 11px;">
               ${pgaMW72 ? `
-                <span style="color: #6B7280;">PGA MW 7.2:</span>
+                <span style="color: #6B7280;">${t('pga_scenario_mw72')}:</span>
                 <span style="font-weight: 600; color: #F59E0B;">${pgaMW72.toFixed(3)}g</span>
               ` : ''}
               ${pgaMW75 ? `
-                <span style="color: #6B7280;">PGA MW 7.5:</span>
+                <span style="color: #6B7280;">${t('pga_scenario_mw75')}:</span>
                 <span style="font-weight: 600; color: #DC2626;">${pgaMW75.toFixed(3)}g</span>
               ` : ''}
             </div>
@@ -484,11 +484,11 @@ export default function MapView() {
             <div style="font-weight: 600; font-size: 11px; color: #6B7280; margin-bottom: 6px;">ML PREDICTION</div>
             <div style="display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 11px;">
               ${mlRiskScore ? `
-                <span style="color: #6B7280;">ML Risk Score:</span>
+                <span style="color: #6B7280;">${t('ml_risk_score')}:</span>
                 <span style="font-weight: 600; color: #DC2626;">${mlRiskScore.toFixed(2)}</span>
               ` : ''}
               ${mlPredictedClass ? `
-                <span style="color: #6B7280;">Predicted Class:</span>
+                <span style="color: #6B7280;">${t('ml_predicted_class')}:</span>
                 <span style="font-weight: 600; color: #374151;">${mlPredictedClass}</span>
               ` : ''}
             </div>

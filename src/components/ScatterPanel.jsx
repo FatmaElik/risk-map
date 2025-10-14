@@ -358,16 +358,16 @@ export default function ScatterPanel() {
               {hoveredPoint.district} • {hoveredPoint.city}
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '4px 8px', fontSize: 10 }}>
-              <span>Risk:</span>
+              <span>{t('risk_score')}:</span>
               <span style={{ fontWeight: 600 }}>{formatMetric('risk_score', hoveredPoint.risk_score)}</span>
               
-              <span>VS30:</span>
+              <span>{t('vs30')}:</span>
               <span style={{ fontWeight: 600 }}>{formatMetric('vs30_mean', hoveredPoint.vs30_mean)}</span>
               
-              <span>Pop:</span>
+              <span>{t('population')}:</span>
               <span style={{ fontWeight: 600 }}>{formatMetric('population', hoveredPoint.population)}</span>
               
-              <span>Bldgs:</span>
+              <span>{t('building_count')}:</span>
               <span style={{ fontWeight: 600 }}>{formatMetric('building_count', hoveredPoint.building_count)}</span>
             </div>
             <div style={{ 
