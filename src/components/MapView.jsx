@@ -466,7 +466,7 @@ export default function MapView() {
           </div>
           ${pgaMW72 || pgaMW75 ? `
           <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #E5E7EB;">
-            <div style="font-weight: 600; font-size: 11px; color: #6B7280; margin-bottom: 6px;">EARTHQUAKE SCENARIOS</div>
+             <div style="font-weight: 600; font-size: 11px; color: #6B7280; margin-bottom: 6px;">${t('earthquake_scenarios')}</div>
             <div style="display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 11px;">
               ${pgaMW72 ? `
                 <span style="color: #6B7280;">${t('pga_scenario_mw72')}:</span>
@@ -481,7 +481,7 @@ export default function MapView() {
           ` : ''}
           ${mlRiskScore || mlPredictedClass ? `
           <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid #E5E7EB;">
-            <div style="font-weight: 600; font-size: 11px; color: #6B7280; margin-bottom: 6px;">ML PREDICTION</div>
+             <div style="font-weight: 600; font-size: 11px; color: #6B7280; margin-bottom: 6px;">${t('ml_prediction')}</div>
             <div style="display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 11px;">
               ${mlRiskScore ? `
                 <span style="color: #6B7280;">${t('ml_risk_score')}:</span>
@@ -499,13 +499,13 @@ export default function MapView() {
               onclick="window.selectNeighborhood('${props.mah_id}')"
               style="flex: 1; padding: 6px 12px; background: #3B82F6; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600;"
             >
-              Select
-            </button>
-            <button
-              onclick="window.zoomToNeighborhood('${props.mah_id}')"
-              style="flex: 1; padding: 6px 12px; background: #E5E7EB; color: #374151; border: none; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600;"
-            >
-              Zoom
+               ${t('select')}
+             </button>
+             <button
+               onclick="window.zoomToNeighborhood('${props.mah_id}')"
+               style="flex: 1; padding: 6px 12px; background: #E5E7EB; color: #374151; border: none; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600;"
+             >
+               ${t('zoom')}
             </button>
           </div>
         </div>
