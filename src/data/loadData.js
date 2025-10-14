@@ -91,36 +91,53 @@ export async function loadGeoJSONs(paths) {
 }
 
 /**
- * Load CSV with PapaParse
+ * Load CSV with PapaParse - supports patched CSV fallback
  */
 export async function loadCSV(path) {
   if (cache.csv.has(path)) {
     return cache.csv.get(path);
   }
   
-  try {
-    const response = await safeFetch(path);
-    const text = await response.text();
-    
-    return new Promise((resolve) => {
-      Papa.parse(text, {
-        header: true,
-        dynamicTyping: true,
-        skipEmptyLines: true,
-        complete: (results) => {
-          cache.csv.set(path, results.data);
-          resolve(results.data);
-        },
-        error: (error) => {
-          showToast(`Error parsing CSV: ${path}. ${error.message}`, 'error');
-          resolve([]);
-        },
-      });
-    });
-  } catch (error) {
-    showToast(`Data file missing: ${path}. Please provide it.`, 'error');
-    return [];
+  // For risk CSV files, try patched version first
+  let tryUrls = [path];
+  if (path.includes('/risk/') && path.endsWith('.csv')) {
+    const patchedPath = path.replace('.csv', '.patched.csv');
+    tryUrls = [patchedPath, path];
   }
+  
+  let lastError;
+  for (const url of tryUrls) {
+    try {
+      const response = await safeFetch(url);
+      const text = await response.text();
+      
+      return new Promise((resolve) => {
+        Papa.parse(text, {
+          header: true,
+          dynamicTyping: true,
+          skipEmptyLines: true,
+          complete: (results) => {
+            cache.csv.set(path, results.data);
+            if (url !== path) {
+              console.log(`✅ Using patched CSV: ${url}`);
+            }
+            resolve(results.data);
+          },
+          error: (error) => {
+            showToast(`Error parsing CSV: ${url}. ${error.message}`, 'error');
+            resolve([]);
+          },
+        });
+      });
+    } catch (error) {
+      lastError = error;
+      console.warn(`CSV fetch failed: ${url}`, error?.message || error);
+      continue;
+    }
+  }
+  
+  showToast(`Data file missing: ${path}. Please provide it.`, 'error');
+  return [];
 }
 
 /**

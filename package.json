@@ -9,7 +9,8 @@
     "build:vercel": "vite -c vite.config.vercel.ts build",
     "preview": "vite preview",
     "postbuild": "cp dist/index.html dist/404.html",
-    "deploy:prod": "vercel deploy --prod --force --yes"
+    "deploy:prod": "vercel deploy --prod --force --yes",
+    "data:enrich:ankara": "node scripts/enrich-ankara.mjs"
   },
   "dependencies": {
     "d3-array": "^3.2.4",
