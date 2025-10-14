@@ -4,6 +4,7 @@ import { getColorRamp } from '../utils/color';
 import { formatNumber, getMetricLabel } from '../utils/format';
 import useAppStore from '../state/useAppStore';
 import { RISK_BINS, RISK_COLORS, RISK_LABELS_TR, RISK_LABELS_EN } from '../lib/riskScale';
+import { t } from '../i18n';
 
 /**
  * 5-class legend for the current choropleth metric
